@@ -1,17 +1,106 @@
 #ifndef RYJEN_OS_QUEUE_H
 #define RYJEN_OS_QUEUE_H
 
+/**
+ * Allocates a new queue
+ * @return the queue instance
+ */
 Queue *new_queue();
 
+/**
+ * Destroys a queue instance
+ * @param Queue the queue instance
+ */
+void delete_queue(Queue *);
+
+/**
+ * Destroys a queue and all its contents.
+ * @param Queue the queue instance
+ */
 void delete_queue_list(Queue *);
 
+/**
+ * Pushes a process on the back of the queue
+ * @param Queue the queue instance
+ * @param Process the process instance
+ * @return 0 on success, -1 on error
+ */
 int queue_push_back(Queue *, Process *);
 
+/**
+ * Pushes a process on the front of the queue
+ * @param Queue the queue instance
+ * @param Process the process instance
+ * @return 0 on success, -1 on error
+ */
+int queue_push_front(Queue *, Process *);
+
+/**
+ * Pops a process from the front of a queue
+ * @param Queue the queue instance
+ * @return the process instance
+ */
 Process *queue_pop_front(Queue *);
 
+/**
+ * Pops a process from the back of a queue
+ * @param Queue the queue instance
+ * @return the process instance
+ */
+Process *queue_pop_back(Queue *);
+
+/**
+ * Peeks at the front of a queue
+ * @param Queue the queue instance
+ * @return the process at the front of the queue
+ */
 Process *queue_peek_front(Queue *);
 
-int queue_sort(Queue *);
+/**
+ * Peeks at the back of a queue
+ * @param Queue the queue instance
+ * @return the process at the back of the queue
+ */
+Process *queue_peek_back(Queue *);
+
+/**
+ * Sorts a queue
+ * NOTE: uses merge sort O(n log n)
+ * @param Queue the queue instance (mutable)
+ * @param Comparator how to compare contents
+ * @return 0 on success, -1 on error
+ */
+int queue_sort(Queue *, Comparator);
+
+/**
+ * Tests if a queue is empty
+ * @param Queue the queue instance
+ * @return positive if true, 0 if false
+ */
+int queue_is_empty(Queue *);
+
+/**
+ * Gets the size of a queue
+ * @param Queue the queue instance
+ * @return the number of items in the queue
+ */
+int queue_size(Queue *);
+
+/**
+ * Iterates over a queue using a callback for each item
+ * @param Queue the queue instance
+ * @param Iterator the callback
+ * @param void* the iterator parameter
+ * @return 0 on success, -1 on error
+ */
+int queue_iterate(Queue *queue, Iterator iterator, void *);
+
+// iterator errored
+#define QUEUE_ITERATE_ERROR   -1
+// iterator wants to finish
+#define QUEUE_ITERATE_FINISH  0
+// iterator wants the next item
+#define QUEUE_ITERATE_NEXT    1
 
 #endif
 

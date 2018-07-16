@@ -4,6 +4,8 @@
 #include "queue.h"
 #include "process.h"
 
+typedef struct queue_item QueueItem;
+
 struct queue_item {
   QueueItem *next;
   QueueItem *prev;
@@ -13,20 +15,7 @@ struct queue_item {
 struct queue {
   QueueItem *first;
   QueueItem *last;
-  Comparator comparator;
 };
-
-static int __queue_default_compare(QueueItem *a, QueueItem *b) {
-  if (a == NULL) {
-    return b ? -1 : 0;
-  }
-
-  if (b == NULL) {
-    return a ? 1 : 0;
-  }
-
-  return process_arrival_time(a->process) - process_arrival_time(b->process);
-}
 
 Queue *new_queue() {
 
@@ -38,11 +27,10 @@ Queue *new_queue() {
 
   q->first = NULL;
   q->last = NULL;
-  q->comparator = __queue_default_compare;
   return q;
 }
 
-QueueItem *new_queue_item() {
+static QueueItem *__new_queue_item() {
   QueueItem *queue = (QueueItem *) malloc(sizeof(Queue));
 
   if (queue == NULL) {
@@ -61,7 +49,7 @@ void delete_queue(Queue *queue) {
   free(queue);
 }
 
-void delete_queue_item(QueueItem *item) {
+static void __delete_queue_item(QueueItem *item) {
   if (item == NULL) {
     return;
   }
@@ -74,18 +62,9 @@ void delete_queue_list(Queue *list) {
   }
   for (QueueItem *prev = NULL, *it = list->first; it; it = prev) {
     prev = it;
-    delete_queue_item(it);
+    __delete_queue_item(it);
   }
   delete_queue(list);
-}
-
-int queue_set_comparator(Queue *queue, Comparator value) {
-  if (queue == NULL || value == NULL) {
-    return -1;
-  }
-
-  queue->comparator = value;
-  return 0;
 }
 
 static int __queue_unlink(Queue *list, QueueItem *item) {
@@ -132,6 +111,9 @@ static QueueItem* __queue_append(Queue *list, QueueItem *item) {
   QueueItem *next = item->next;
   item->next = NULL;
   list->last = item;
+  if (list->first == NULL) {
+    list->first = item;
+  }
   return next;
 }
 
@@ -150,6 +132,9 @@ static QueueItem *__queue_insert(Queue *list, QueueItem *item) {
   QueueItem *prev = item->prev;
   item->prev = NULL;
   list->first = item;
+  if (list->last == NULL) {
+    list->last = item;
+  }
   return prev;
 }
 
@@ -164,7 +149,7 @@ static Queue *__queue_merge(Queue *left, Queue *right, Comparator compare) {
   QueueItem *r = right->first;
 
   while(l != NULL && r != NULL) {
-    if (compare(l, r) <= 0) {
+    if (compare(l->process, r->process) <= 0) {
       l = __queue_append(result, l);
     } else {
       r = __queue_append(result, r);
@@ -189,7 +174,7 @@ int queue_push_front(Queue *list, Process *p) {
     return -1;
   }
 
-  QueueItem *item = new_queue_item();
+  QueueItem *item = __new_queue_item();
 
   item->process = p;
 
@@ -203,7 +188,7 @@ int queue_push_back(Queue *list, Process *p) {
     return -1;
   }
 
-  QueueItem *item = new_queue_item();
+  QueueItem *item = __new_queue_item();
 
   item->process = p;
 
@@ -212,17 +197,28 @@ int queue_push_back(Queue *list, Process *p) {
   return 0;
 }
 
-Queue *__queue_sort(Queue *list) {
+static Queue *__queue_copy(Queue *queue) {
+  Queue *q = new_queue();
+  for(QueueItem *it = queue->first; it; it = it->next) {
+    __queue_append(q, it);
+  }
+  return q;
+}
+
+static Queue *__queue_sort(Queue *list, Comparator comparator) {
 
   if (list == NULL) {
     return NULL;
   }
 
+
+  if (list->first == NULL || list->first->next == NULL) {
+    return __queue_copy(list);
+  }
+
   Queue *left = new_queue();
   Queue *right = new_queue();
   int pos = 0;
-
-  left->comparator = right->comparator = list->comparator;
 
   for (QueueItem *it = list->first, *next = NULL; it; it = next, pos++) {
     next = it->next;
@@ -234,10 +230,10 @@ Queue *__queue_sort(Queue *list) {
     }
   }
     
-  left = __queue_sort(left);
-  right = __queue_sort(right);
+  left = __queue_sort(left, comparator);
+  right = __queue_sort(right, comparator);
 
-  return __queue_merge(left, right, list->comparator);
+  return __queue_merge(left, right, comparator);
 }
 
 Process *queue_pop_front(Queue *list) {
@@ -251,7 +247,23 @@ Process *queue_pop_front(Queue *list) {
 
   __queue_unlink(list, item);
 
-  delete_queue_item(item);
+  __delete_queue_item(item);
+
+  return p;
+}
+
+Process *queue_pop_back(Queue *list) {
+  if (list == NULL || list->first == NULL) {
+    return NULL;
+  }
+
+  QueueItem *item = list->last;
+
+  Process *p = item->process;
+
+  __queue_unlink(list, item);
+
+  __delete_queue_item(item);
 
   return p;
 }
@@ -265,12 +277,21 @@ Process *queue_peek_front(Queue *list) {
   return list->first->process;
 }
 
-int queue_sort(Queue *list) {
+Process *queue_peek_back(Queue *list) {
+
+  if (list == NULL || list->last == NULL) {
+    return NULL;
+  }
+
+  return list->last->process;
+}
+
+int queue_sort(Queue *list, Comparator comparator) {
   if (list == NULL) {
     return -1;
   }
 
-  Queue *result = __queue_sort(list);
+  Queue *result = __queue_sort(list, comparator);
 
   if (result == NULL) {
     return -1;
@@ -281,5 +302,34 @@ int queue_sort(Queue *list) {
 
   delete_queue(result);
   return 0;
+}
+
+int queue_iterate(Queue *queue, Iterator iterator, void *arg) {
+
+  for (QueueItem *it = queue->first, *next = NULL; it; it = next) {
+    next = it->next;
+
+    switch(iterator(queue, it->process, arg)) {
+      case QUEUE_ITERATE_FINISH:
+        return 0;
+      case -1:
+        return -1;
+      default:
+        break;
+    }
+  }
+  return 0;
+}
+
+int queue_size(Queue *queue) {
+  int count = 0;
+  for (QueueItem *it = queue->first; it; it = it->next) {
+    count++;
+  }
+  return count;
+}
+
+int queue_is_empty(Queue *queue) {
+  return queue->first == NULL || queue->last == NULL;
 }
 

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "A 0 9"
+echo "B 2 6"
+echo "C 4 3"
+echo "D 6 5"
+echo "E 9 3"
+
+
+exit 0
+
