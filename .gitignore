@@ -1,4 +1,11 @@
 obj
+*.o
+rr
+spn
+str
+test
+fcfs
+
 # Prerequisites
 *.d
 
