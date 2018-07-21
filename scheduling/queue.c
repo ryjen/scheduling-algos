@@ -60,8 +60,8 @@ void delete_queue_list(Queue *list) {
   if (list == NULL) {
     return;
   }
-  for (QueueItem *prev = NULL, *it = list->first; it; it = prev) {
-    prev = it;
+  for (QueueItem *next = NULL, *it = list->first; it; it = next) {
+    next = it->next;
     __delete_queue_item(it);
   }
   delete_queue(list);
