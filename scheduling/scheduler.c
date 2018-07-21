@@ -134,11 +134,6 @@ static int __scheduler_quantum_prempt(Scheduler *sched, Process *p) {
 
 	int q = algorithm_quantum(sched->algorithm);
 
-	// quantums 1 or less are always prempted
-	if (q <= 1) {
-		return queue_push_back(sched->queue, p);
-	}
-
 	// process has not reached the quantum...
 	if (process_quantum(p) < q) {
 		// keep it as current
