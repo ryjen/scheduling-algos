@@ -20,6 +20,13 @@ void delete_queue(Queue *);
 void delete_queue_list(Queue *);
 
 /**
+ * Copies a queue (shallow)
+ * @param Queue the queue instance
+ * @return a copy of the queue
+ */
+Queue *queue_copy(Queue *);
+
+/**
  * Pushes a process on the back of the queue
  * @param Queue the queue instance
  * @param Process the process instance
@@ -62,6 +69,14 @@ Process *queue_peek_front(Queue *);
  * @return the process at the back of the queue
  */
 Process *queue_peek_back(Queue *);
+
+/**
+ * Removes a process from the queue
+ * @param Queue the queue instance
+ * @param Process the process to remove
+ * @return 0 on success, 1 on failure, -1 on error
+ */
+int queue_remove(Queue *, Process *);
 
 /**
  * Sorts a queue

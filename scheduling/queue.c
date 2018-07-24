@@ -197,10 +197,16 @@ int queue_push_back(Queue *list, Process *p) {
   return 0;
 }
 
-static Queue *__queue_copy(Queue *queue) {
+static QueueItem *__queue_item_copy(QueueItem *value) {
+  QueueItem *it = __new_queue_item();
+  it->process = value->process;
+  return it;
+}
+
+Queue *queue_copy(Queue *queue) {
   Queue *q = new_queue();
   for(QueueItem *it = queue->first; it; it = it->next) {
-    __queue_append(q, it);
+    __queue_append(q, __queue_item_copy(it));
   }
   return q;
 }
@@ -213,7 +219,7 @@ static Queue *__queue_sort(Queue *list, Comparator comparator) {
 
 
   if (list->first == NULL || list->first->next == NULL) {
-    return __queue_copy(list);
+    return queue_copy(list);
   }
 
   Queue *left = new_queue();
@@ -286,6 +292,23 @@ Process *queue_peek_back(Queue *list) {
   return list->last->process;
 }
 
+int queue_remove(Queue *list, Process *p) {
+  if (list == NULL || p == NULL) {
+    return -1;
+  }
+
+  for (QueueItem *it = list->first; it; it = it->next) {
+    if (it->process != p) {
+      continue;
+    }
+
+    __queue_unlink(list, it);
+    return 0;
+  }
+
+  return 1;
+}
+
 int queue_sort(Queue *list, Comparator comparator) {
   if (list == NULL) {
     return -1;
@@ -306,10 +329,12 @@ int queue_sort(Queue *list, Comparator comparator) {
 
 int queue_iterate(Queue *queue, Iterator iterator, void *arg) {
 
+  int index = 0;
+
   for (QueueItem *it = queue->first, *next = NULL; it; it = next) {
     next = it->next;
 
-    switch(iterator(queue, it->process, arg)) {
+    switch(iterator(queue, index++, it->process, arg)) {
       case QUEUE_ITERATE_FINISH:
         return 0;
       case -1:

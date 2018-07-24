@@ -53,5 +53,12 @@ float scheduler_avg_turnaround_time(Scheduler *);
  */
 float scheduler_avg_wait_time(Scheduler *);
 
+/**
+ * Gets the remaining service time for all processes
+ * @param Scheduler the scheduler instance
+ * @return the remaining service time as an integer
+ */
+int scheduler_total_remaining_service_time(Scheduler *);
+
 #endif
 

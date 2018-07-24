@@ -299,8 +299,8 @@ static void *__scheduler_consume(void *arg) {
 		if (p != NULL) {
 
 			// output and update tick count
-			printf("Time %02d : Process %s (a=%d,s=%d)\n", sched->tick, process_name(p), 
-					process_arrival_time(p), process_service_time(p));
+			printf("Time %02d : Process %s Arrival %d Service %d\n", sched->tick, process_name(p), 
+					process_current_arrival_time(p), process_current_service_time(p));
 
 			sched->tick++;
 
@@ -483,7 +483,7 @@ int scheduler_read_processes(Scheduler *sched) {
 			return -1; 
 		}
 
-		printf("Added process '%s' (arrival: %d service: %d)\n", name, atime, stime);
+		printf("Added : Process %s Arrival %d Service %d\n", name, atime, stime);
 	}
 
 	printf("\n");
@@ -493,9 +493,9 @@ int scheduler_read_processes(Scheduler *sched) {
 }
 
 // iterates a queue tracking the total turnaround time
-static int __process_turnaround_time_iterator(Queue *list, Process *p, void *arg) {
+static int __process_turnaround_time_iterator(Queue *list, int index, Process *p, void *arg) {
 
-	if (list == NULL || arg == NULL || p == NULL) {
+	if (list == NULL || arg == NULL || p == NULL || index == -1) {
 		return -1;
 	}
 
@@ -507,8 +507,8 @@ static int __process_turnaround_time_iterator(Queue *list, Process *p, void *arg
 }
 
 // iterates a queue tracking the total wait time
-static int __process_wait_time_iterator(Queue *list, Process *p, void *arg) {
-	if (list == NULL || arg == NULL || p == NULL) {
+static int __process_wait_time_iterator(Queue *list, int index, Process *p, void *arg) {
+	if (list == NULL || arg == NULL || p == NULL || index == -1) {
 		return -1;
 	}
 
@@ -517,6 +517,18 @@ static int __process_wait_time_iterator(Queue *list, Process *p, void *arg) {
 	*total += ((process_completion_time(p) - process_arrival_time(p)) - process_service_time(p));
 
 	return QUEUE_ITERATE_NEXT;
+}
+
+static int __process_service_time_iterator(Queue *list, int index, Process *p, void *arg) {
+  if (list == NULL || arg == NULL || p == NULL || index == -1) {
+    return -1;
+  }
+
+  int *total = (int*) arg;
+
+  *total += process_service_time(p);
+
+  return QUEUE_ITERATE_NEXT;
 }
 
 float scheduler_avg_turnaround_time(Scheduler *sched) {
@@ -546,6 +558,20 @@ float scheduler_avg_wait_time(Scheduler *sched) {
 	}
 
 	return (float) total / (float) queue_size(sched->completed);
+}
+
+int scheduler_total_remaining_service_time(Scheduler *sched) {
+  if (sched == NULL) {
+    return -1;
+  }
+
+  int total = 0;
+
+  if (queue_iterate(sched->queue, __process_service_time_iterator, &total) == -1) {
+    return -1;
+  }
+
+  return total;
 }
 
 

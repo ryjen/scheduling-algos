@@ -20,7 +20,7 @@ typedef Process * (*Callback) (Queue *);
 typedef int (*Comparator) (Process *, Process *);
 
 // An iterator for queues
-typedef int (*Iterator) (Queue *, Process *, void *);
+typedef int (*Iterator) (Queue *, int, Process *, void *);
 
 #endif
 
