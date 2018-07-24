@@ -299,7 +299,7 @@ static void *__scheduler_consume(void *arg) {
 		if (p != NULL) {
 
 			// output and update tick count
-			printf("Time %02d : Process %s Arrival %d Service %d\n", sched->tick, process_name(p), 
+			printf("Time %02d : Process %s Arrival %02d Service %02d\n", sched->tick, process_name(p), 
 					process_current_arrival_time(p), process_current_service_time(p));
 
 			sched->tick++;
@@ -387,7 +387,7 @@ int scheduler_run(Scheduler *sched) {
 	pthread_join(producer, NULL);
 	pthread_join(consumer, NULL);
 
-	printf("\n%-24s : %.2f\n", "Average Turnaround Time", scheduler_avg_turnaround_time(sched));
+	printf("\n%-24s : %.2f\n", "Average Turn Around Time", scheduler_avg_turnaround_time(sched));
 	printf("%-24s : %.2f\n\n", "Average Wait Time", scheduler_avg_wait_time(sched));
 
 	return sched->error;
@@ -483,7 +483,7 @@ int scheduler_read_processes(Scheduler *sched) {
 			return -1; 
 		}
 
-		printf("Added : Process %s Arrival %d Service %d\n", name, atime, stime);
+		printf("Added : Process %s Arrival %02d Service %02d\n", name, atime, stime);
 	}
 
 	printf("\n");
