@@ -63,13 +63,23 @@ static int __queue_test_push_front() {
   }
 
   Process *p3 = queue_peek_front(q);
-  
+
+  if (p3 == NULL) {
+    puts("no value on front");
+    return 1;
+  }
+
   if (p3 != p2) {
     printf("process %s != %s\n", process_name(p2), process_name(p3));
     return 1;
   }
 
   p3 = queue_peek_back(q);
+
+  if (p3 == NULL) {
+    puts("No value on front");
+    return 1;
+  }
 
   if (p1 != p3) {
     printf("process %s != %s\n", process_name(p1), process_name(p3));
@@ -97,6 +107,11 @@ static int __queue_test_pop_back() {
 
   Process *p3 = queue_pop_back(q);
 
+  if (p3 == NULL) {
+    puts("No value on front");
+    return 1;
+  }
+
   if (p3 != p2) {
     printf("process %s != %s\n", process_name(p2), process_name(p3));
     return 1;
@@ -108,6 +123,11 @@ static int __queue_test_pop_back() {
   }
 
   p3 = queue_pop_back(q);
+
+  if (p3 == NULL) {
+    puts("No value on back");
+    return 1;
+  }
 
   if (p3 != p1) {
     printf("process %s != %s\n", process_name(p1), process_name(p3));
@@ -140,6 +160,10 @@ static int __queue_test_pop_front() {
 
   Process *p3 = queue_pop_front(q);
 
+  if (p3 == NULL) {
+    return 1;
+  }
+
   if (p1 != p3) {
     return 1;
   }
@@ -149,6 +173,10 @@ static int __queue_test_pop_front() {
   }
 
   p3 = queue_pop_front(q);
+
+  if (p3 == NULL) {
+    return 1;
+  }
 
   if (p2 != p3) {
     return 1;

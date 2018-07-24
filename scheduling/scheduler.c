@@ -189,6 +189,24 @@ static int __scheduler_service_prempt(Scheduler *sched, Process *p) {
 }
 
 /**
+ * Waits for a new arrival using a conditional wait
+ * @param sched the scheduler instance
+ * @return 0 on success, -1 on error
+ */
+int __scheduler_wait_for_new_arrival(Scheduler *sched) {
+		// while there is no new arrival...
+		while(!__scheduler_has_new_arrival(sched)) {
+
+			// wait until there is a clock tick
+			if (pthread_cond_wait(&sched->can_produce, &sched->lock)) {
+				return -1;
+			}
+		}
+
+		return 0;
+}
+
+/**
  * produces new arrivals and puts them on the queue
  * @param arg the thread parameter (should be scheduler instance)
  * @return NULL (check scheduler instance for error number)
@@ -207,26 +225,19 @@ static void *__scheduler_produce(void *arg) {
 			break;
 		}
 
-		// while there is no new arrival...
-		while(!__scheduler_has_new_arrival(sched)) {
+    // wait for new arrivals
+    err = __scheduler_wait_for_new_arrival(sched);
 
-			// wait until there is a clock tick
-			err = pthread_cond_wait(&sched->can_produce, &sched->lock);
-
-			if (__scheduler_error(sched, err, "pthread_cond_wait")) {
-				break;
-			}
-		}
-
-		if (err) {
-			break;
-		}
+    if (__scheduler_error(sched, err, "scheduler_wait_for_new_arrival")) {
+      break;
+    }
 
 		// remove the first arrival and put on the queue
 		Process *p = queue_pop_front(sched->arrivals);
 
 		if (p != NULL) {
 
+      // prempt based on service time
 			err = __scheduler_service_prempt(sched, p);
 
 			if (__scheduler_error(sched, err, "scheduler_queue_process")) {
@@ -260,6 +271,22 @@ static void *__scheduler_produce(void *arg) {
 }
 
 /**
+ * waits for a new process in the queue
+ * @param sched the scheduler instance
+ * @return 0 on success, -1 on error
+ */
+int __scheduler_wait_for_new_process(Scheduler *sched) {
+		// while there is nothing in the queue...
+		while (queue_is_empty(sched->queue)) {
+			if (pthread_cond_wait(&sched->can_consume, &sched->lock)) {
+				return -1;
+			}
+		}
+
+		return 0;
+}
+
+/**
  * consumes new arrival put on the queue.
  * the scheduler will use the algorithm specified to
  * process the queue.
@@ -270,7 +297,7 @@ static void *__scheduler_consume(void *arg) {
 	Scheduler *sched = (Scheduler *) arg;
 	int err = 0;
 
-	// while the scheduler is still alive...
+	// while the scheduler is still alive or the producer is done...
 	while(sched->status >= SCHEDULER_ALIVE) {
 
 		// lock the scheduler
@@ -280,19 +307,14 @@ static void *__scheduler_consume(void *arg) {
 			break;
 		}
 
-		// while there is nothing in the queue...
-		while (queue_is_empty(sched->queue)) {
-			err = pthread_cond_wait(&sched->can_consume, &sched->lock);
+    // if the queue is empty, wait for a new process
+    err = __scheduler_wait_for_new_process(sched);
 
-			if (__scheduler_error(sched, err, "pthread_cond_wait")) {
-				break;
-			}
-		}
+    if (__scheduler_error(sched, err, "scheduler_wait_for_queue")) {
+      break;
+    }
 
-		if (err) {
-			break;
-		}
-
+    // run the algorithm to find the next process in the queue
 		Process *p = algorithm_run(sched->algorithm, sched->queue);
 
 		// if there is a process in the queue...
@@ -304,9 +326,9 @@ static void *__scheduler_consume(void *arg) {
 
 			sched->tick++;
 
+		  // execute a time slice on the process
 			int current = process_run(p);
 
-			// execute a time slice on the process
 			switch(current) {
 				case 0:
 					// no more service time, set as completed
@@ -318,7 +340,8 @@ static void *__scheduler_consume(void *arg) {
 					sched->status = SCHEDULER_ERROR;
 					break;
 				default: 
-					err = __scheduler_quantum_prempt(sched, p);
+					// prempt process if needed
+          err = __scheduler_quantum_prempt(sched, p);
 					break;
 
 			}
@@ -349,6 +372,7 @@ static void *__scheduler_consume(void *arg) {
 			break;
 		}
 
+    // simulate work
 		microsleep(100);
 	}
 

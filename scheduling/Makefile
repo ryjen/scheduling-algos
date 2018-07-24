@@ -46,7 +46,6 @@ lottery: $(ODIR)/lottery.o $(PROG_OBJS)
 $(TEST): $(TEST_OBJS)
 	@echo "Linking $@"
 	@$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
-	@./$@
 
 $(ODIR)/%.o: %.c $(DEPS)
 	@echo "Compiling $@"
