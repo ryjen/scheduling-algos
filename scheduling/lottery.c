@@ -71,18 +71,19 @@ static Process * __lottery_auto_ticket(Queue *list) {
   // allocate dynamic data
   lottery.processes = calloc(qsize, sizeof(Process*));
 
-  // first, find the total service time for the queue
+  // first, build the lottery info from the queue
   if (queue_iterate(list, __build_lottery_info, &lottery) == -1) {
     return NULL;
   }
 
-  // sort the processes on service time
+  // sort the processes on service time in ascending order
   qsort(lottery.processes, qsize, sizeof(Process*), qsort_processes);
 
-  // next, determine the ticket for processes and check for a winner
+  // determine the ticket for a process and check for a winner
   for (int i = 0, ticket = 0; i < qsize; i++) {
     Process *p = lottery.processes[i];
     
+    // divy up the tickets between 0 and NUM_TICKETS based on service time
     ticket += (((float) process_service_time(p) / (float) lottery.total_service_time) * (float) NUM_TICKETS);
  
     if (ticket > lottery.winning_ticket) {
@@ -91,16 +92,14 @@ static Process * __lottery_auto_ticket(Queue *list) {
     }
   }
 
+  // cleanup
+  free(lottery.processes);
 
   // no winner?
   if (lottery.winner == NULL) {
-    // just take random
     puts("Error no lottery winner");
     return NULL;
   }
-
-  // cleanup
-  free(lottery.processes);
 
   // remove the winner from the queue
   if (queue_remove(list, lottery.winner) == -1) {
