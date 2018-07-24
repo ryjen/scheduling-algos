@@ -303,10 +303,30 @@ int queue_remove(Queue *list, Process *p) {
     }
 
     __queue_unlink(list, it);
+    __delete_queue_item(it);
     return 0;
   }
 
   return 1;
+}
+
+Process* queue_remove_at(Queue *list, int index) {
+  if (list == NULL || index < 0) {
+    return NULL;
+  }
+
+  int pos = 0;
+
+  for (QueueItem *it = list->first; it; it = it->next) {
+    if (pos == index) {
+      Process *p = it->process;
+      __queue_unlink(list, it);
+      __delete_queue_item(it);
+      return p;
+    }
+    pos++;
+  }
+  return NULL;
 }
 
 int queue_sort(Queue *list, Comparator comparator) {

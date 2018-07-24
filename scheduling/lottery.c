@@ -41,12 +41,43 @@ static int __build_lottery_info(Queue *queue, int index, Process *p, void *arg) 
   return QUEUE_ITERATE_NEXT;
 }
 
-int qsort_processes(const void *a, const void *b) {
+static int __qsort_processes(const void *a, const void *b) {
   return process_service_time((Process*) a) - process_service_time((Process*) b);
 }
 
+// a simple lottery that divides up tickets evenly based on queue size
+Process * __lottery_auto_assign(Queue *list) {
+  if (list == NULL) {
+    return NULL;
+  }
+
+  const int qsize = queue_size(list);
+
+  if (qsize <= 1 || qsize >= NUM_TICKETS) {
+    return queue_pop_front(list);
+  }
+
+  // the bucket size
+  int bucket = NUM_TICKETS / qsize;
+
+  // the winning ticket
+  int winner = rand() % NUM_TICKETS;
+
+  // for each item
+  for (int i = 0, ticket = 0; i < qsize; i++) {
+    // add the bucket
+    ticket += bucket;
+
+    if (ticket > winner) {
+      return queue_remove_at(list, i);
+    }
+  }
+
+  return NULL;
+}
+
 // an algorithm to auto-assign tickets and a winner
-static Process * __lottery_auto_ticket(Queue *list) {
+Process * __lottery_service_time(Queue *list) {
   if (list == NULL) {
     return NULL;
   }
@@ -77,7 +108,7 @@ static Process * __lottery_auto_ticket(Queue *list) {
   }
 
   // sort the processes on service time in ascending order
-  qsort(lottery.processes, qsize, sizeof(Process*), qsort_processes);
+  qsort(lottery.processes, qsize, sizeof(Process*), __qsort_processes);
 
   // determine the ticket for a process and check for a winner
   for (int i = 0, ticket = 0; i < qsize; i++) {
@@ -115,7 +146,7 @@ int main() {
   srand(time(0));
 
   // create the algorithm
-  Algorithm *algo = new_algorithm(__lottery_auto_ticket);
+  Algorithm *algo = new_algorithm(__lottery_auto_assign);
 
   // create the scheduler
   Scheduler *sched = new_scheduler(algo);

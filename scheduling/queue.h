@@ -79,6 +79,14 @@ Process *queue_peek_back(Queue *);
 int queue_remove(Queue *, Process *);
 
 /**
+ * Removes a process at an index from the queue
+ * @param Queue the queue instance
+ * @param int the index of the process
+ * @return the removed process on success, null otherwise
+ */
+Process* queue_remove_at(Queue *, int);
+
+/**
  * Sorts a queue
  * NOTE: uses merge sort O(n log n)
  * @param Queue the queue instance (mutable)
