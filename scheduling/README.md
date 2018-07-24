@@ -6,7 +6,7 @@
 
 ### sample for First Come First Serve implementation
 
-```
+```c
 static Process * __first_come_first_serve(Queue *list) {
   if (list == NULL) {
     return NULL;
