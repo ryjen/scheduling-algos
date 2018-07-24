@@ -10,6 +10,9 @@ Parser *parser_new();
 // destructor
 void parser_delete(Parser *);
 
+// clears a parsers data
+void parser_clear(Parser *);
+
 // reads input from standard input
 int parser_read(Parser *);
 

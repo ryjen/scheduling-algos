@@ -8,10 +8,15 @@
 #include "command.h"
 #include "io.h"
 
+// a command parser
 struct parser {
+  // the list of commands (separated by pipe)
   Command *commands;
+  // the user input
   char *input;
+  // a file descriptor to the input (stdin or pipe)
   int in;
+  // a file descriptor to the output (stdout or pipe)
   int out;
 };
 
@@ -29,7 +34,7 @@ Parser *parser_new() {
 }
 
 // free a parser from memory
-void parser_delete(Parser *parser) {
+void parser_clear(Parser *parser) {
   command_delete_list(parser->commands);
   
   if (parser->input) {
@@ -43,6 +48,12 @@ void parser_delete(Parser *parser) {
   if (parser->out != -1) {
     close(parser->out);
   }
+}
+
+void parser_delete(Parser *parser) {
+  parser_clear(parser);
+
+  free(parser);
 }
 
 // copies standard in/out to parser

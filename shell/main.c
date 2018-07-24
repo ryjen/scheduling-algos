@@ -3,11 +3,10 @@
 
 int main() {
 
+  Parser *parser = parser_new();
+
   // keep running, use ctrl-c to quit
   while(1) {
-
-    // create a new parser
-    Parser *parser = parser_new();
 
     // print prompt
     printf("> ");
@@ -23,7 +22,7 @@ int main() {
     }
 
     // cleanup
-    parser_delete(parser);
+    parser_clear(parser);
   }
 
   return 0;
