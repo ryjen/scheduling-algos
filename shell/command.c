@@ -16,6 +16,7 @@
 #define OUTPIPE 1
 #define MAXPIPE 2
 
+// a named file descriptor
 struct fileio { 
   const char *name;
   int descr;
@@ -24,8 +25,11 @@ struct fileio {
 // representing a command in between pipes
 struct command {
   struct command *next;
+  // arguments for the command
   char *args[MAXARGS];
+  // the input (stdin, pipe or file)
   struct fileio in;
+  // the output (stdout, pipe or file)
   struct fileio out;
 };
 
@@ -217,7 +221,7 @@ static int command_pipe(Command *writer, Command *reader) {
   close(fds[INPIPE]);
   close(fds[OUTPIPE]);
 
-  // wait for the children
+  // wait for the children, no zombies
   if (waitpid(pid1, NULL, 0) == -1
       || waitpid(pid2, NULL, 0) == -1) {
     perror("waitpid");

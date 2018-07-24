@@ -14,9 +14,9 @@ struct parser {
   Command *commands;
   // the user input
   char *input;
-  // a file descriptor to the input (stdin or pipe)
+  // the saved stdin file descriptor
   int in;
-  // a file descriptor to the output (stdout or pipe)
+  // the saved stdout file descriptor
   int out;
 };
 
