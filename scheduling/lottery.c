@@ -53,8 +53,12 @@ Process * __lottery_auto_assign(Queue *list) {
 
   const int qsize = queue_size(list);
 
-  if (qsize <= 1 || qsize >= NUM_TICKETS) {
+  if (qsize <= 1) {
     return queue_pop_front(list);
+  }
+
+  if (qsize > NUM_TICKETS) {
+    qsize = NUM_TICKETS;
   }
 
   // the bucket size
@@ -88,6 +92,10 @@ Process * __lottery_service_time(Queue *list) {
   if (qsize <= 1) {
     // quickly return it
     return queue_pop_front(list);
+  }
+
+  if (qsize > NUM_TICKETS) {
+    qsize = NUM_TICKETS;
   }
 
   Lottery lottery;

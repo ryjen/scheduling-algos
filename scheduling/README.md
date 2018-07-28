@@ -36,7 +36,7 @@ The way processes get tickets is left to the implementor.  I've chosen to have a
 
 For example, if process A has a service time of 9 and process B has a service time of 3 then the total service time is 12.  
 
-A random number betweeen 0 and 99 generates the winning ticket.  The processes are sorted based on number of tickets. 
+A random number betweeen 0 and 99 generates the winning ticket.  
 
 If there are more processes than max tickets then only the first max tickets will be considered.
 
@@ -48,7 +48,7 @@ The total tickets is divided evenly between processes.  Both processes will get 
 
 **Implementation 2**
 
-The total tickets is divided based on a percentage of the process service time.
+The total tickets is divided based on a percentage of the process service time.  The processes are sorted based on service time. Since the list is sorted, the processes with the greatest amount of tickets are first.
 
 In the previous example, process A will get 75 tickets and process B will get 25 tickets.
 
