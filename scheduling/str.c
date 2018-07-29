@@ -6,7 +6,7 @@
 #include "queue.h"
 #include "algorithm.h"
 
-static Process *__str_start(void *arg) {
+static Process *__str_get(void *arg) {
   if (arg == NULL) {
     return NULL;
   }
@@ -20,7 +20,7 @@ static Process *__str_start(void *arg) {
   return queue_pop_front(q);
 }
 
-static int __str_finish(Process *p, void *arg) {
+static int __str_put(Process *p, void *arg) {
   if (p == NULL || arg == NULL) {
     return -1;
   }
@@ -51,7 +51,7 @@ int main() {
   Queue *queue = new_queue();
 
   // create the algorithm
-  Algorithm *algo = new_queue_algorithm(queue, __str_start, __str_finish);
+  Algorithm *algo = new_queue_algorithm(queue, __str_get, __str_put);
 
   // create the scheduler
   Scheduler *sched = new_scheduler(algo);

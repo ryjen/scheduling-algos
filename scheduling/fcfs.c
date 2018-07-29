@@ -5,7 +5,8 @@
 #include "queue.h"
 #include "algorithm.h"
 
-static Process * __fcfs_start(void *arg) {
+// start a process in the queue
+static Process * __fcfs_get(void *arg) {
   if (arg == NULL) {
     return NULL;
   }
@@ -16,7 +17,8 @@ static Process * __fcfs_start(void *arg) {
   return queue_pop_front(queue);
 }
 
-static int __fcfs_finish(Process *p, void *arg) {
+// finish a proces
+static int __fcfs_put(Process *p, void *arg) {
   if (arg == NULL || p == NULL) {
     return -1;
   }
@@ -32,7 +34,7 @@ int main() {
   Queue *queue = new_queue();
 
   // create the algorithm
-  Algorithm *algo = new_queue_algorithm(queue, __fcfs_start, __fcfs_finish);
+  Algorithm *algo = new_queue_algorithm(queue, __fcfs_get, __fcfs_put);
 
   // create the scheduler
   Scheduler *sched = new_scheduler(algo);

@@ -203,7 +203,7 @@ static void *__scheduler_produce(void *arg) {
  */
 int __scheduler_wait_for_new_process(Scheduler *sched) {
 		// while there is nothing in the queue...
-		while (!algorithm_process_exists(sched->algorithm)) {
+		while (!algorithm_process_ready(sched->algorithm)) {
 			if (pthread_cond_wait(&sched->can_consume, &sched->lock)) {
 				return -1;
 			}
@@ -241,7 +241,7 @@ static void *__scheduler_consume(void *arg) {
     }
 
     // run the algorithm to find the next process in the queue
-		Process *p = algorithm_process_start(sched->algorithm);
+		Process *p = algorithm_process_get(sched->algorithm);
 
 		// if there is a process in the queue...
 		if (p != NULL) {
@@ -266,8 +266,8 @@ static void *__scheduler_consume(void *arg) {
 					sched->status = SCHEDULER_ERROR;
 					break;
 				default: 
-					// prempt process if needed
-          err = algorithm_process_finish(sched->algorithm, p);
+					// use algorithm to continue process
+          err = algorithm_process_put(sched->algorithm, p);
 					break;
 
 			}
@@ -279,7 +279,7 @@ static void *__scheduler_consume(void *arg) {
 
 		// quick check to stop the consumer if producer is done
 		if (sched->status == SCHEDULER_DONE) {
-			if (!algorithm_process_exists(sched->algorithm)) {
+			if (!algorithm_process_ready(sched->algorithm)) {
 				sched->status = SCHEDULER_END;
 			}
 		}

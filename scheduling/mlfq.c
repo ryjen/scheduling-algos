@@ -9,9 +9,13 @@
 typedef struct mlfq MLFQ;
 
 struct mlfq {
+  // an array of queues
   Queue **queues;
+  // size of the array
   int size;
+  // current queue index
   int current_index;
+  // an array of queue quantums
   int *quantums;
 };
 
@@ -62,7 +66,7 @@ static int __mlfq_arrive(Process *p, void *arg) {
   return queue_push_back(data->queues[0], p);
 }
   
-static int __mlfq_exists(void *arg) {
+static int __mlfq_ready(void *arg) {
   if (arg == NULL) {
     return -1;
   }
@@ -77,7 +81,7 @@ static int __mlfq_exists(void *arg) {
   return 0;
 }
 
-static Process * __mlfq_start(void *arg) {
+static Process * __mlfq_get(void *arg) {
   if (arg == NULL) {
     return NULL;
   }
@@ -96,7 +100,7 @@ static Process * __mlfq_start(void *arg) {
   return NULL;
 }
 
-static int __mlfq_finish(Process *p, void *arg) {
+static int __mlfq_put(Process *p, void *arg) {
   if (p == NULL || arg == NULL) {
     return -1;
   }
@@ -131,7 +135,7 @@ int main() {
   MLFQ *data = new_mlfq(3, 3);
 
   // create the algorithm
-  Algorithm *algo = new_algorithm(__mlfq_arrive, __mlfq_exists, __mlfq_start, __mlfq_finish, data);
+  Algorithm *algo = new_algorithm(__mlfq_arrive, __mlfq_ready, __mlfq_get, __mlfq_put, data);
 
   // create the scheduler
   Scheduler *sched = new_scheduler(algo);

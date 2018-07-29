@@ -45,7 +45,7 @@ static int __rr_arrive(Process *p, void *arg) {
   return queue_push_back(rr->queue, p);
 }
 
-static int __rr_exists(void *arg) {
+static int __rr_ready(void *arg) {
   if (arg == NULL) {
     return -1;
   }
@@ -53,7 +53,7 @@ static int __rr_exists(void *arg) {
   return !queue_is_empty(data->queue);
 }
 
-static Process * __rr_start(void *arg) {
+static Process * __rr_get(void *arg) {
   if (arg == NULL) {
     return NULL;
   }
@@ -63,7 +63,7 @@ static Process * __rr_start(void *arg) {
   return queue_pop_front(rr->queue);
 }
 
-static int __rr_finish(Process *p, void *arg) {
+static int __rr_put(Process *p, void *arg) {
   if (arg == NULL) {
     return -1;
   }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   RR *data = new_round_robin(q);
 
   // create the algorithm
-  Algorithm *algo = new_algorithm(__rr_arrive, __rr_exists, __rr_start, __rr_finish, data);
+  Algorithm *algo = new_algorithm(__rr_arrive, __rr_ready, __rr_get, __rr_put, data);
 
   // create the scheduler
   Scheduler *sched = new_scheduler(algo);
