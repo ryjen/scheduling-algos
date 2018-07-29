@@ -27,21 +27,21 @@ static int __str_put(Process *p, void *arg) {
 
   Queue *q = (Queue *) arg;
 
-	Process *next = queue_peek_front(q);
+  Process *next = queue_peek_front(q);
 
-	// next process least service time...
-	if (process_compare_current_service_times(next, p) < 0) {
-	  
+  // next process least service time...
+  if (process_compare_current_service_times(next, p) < 0) {
+
     // prempt
     if (process_prempt(p)) {
       return -1;
     }
 
     // put new process on back of queue
-		return queue_push_back(q, p);
-	}
+    return queue_push_back(q, p);
+  }
 
-	// keep as current
+  // keep as current
   return queue_push_front(q, p);
 }
 
@@ -55,7 +55,7 @@ int main() {
 
   // create the scheduler
   Scheduler *sched = new_scheduler(algo);
- 
+
   // read the processes
   scheduler_read_processes(sched);
 

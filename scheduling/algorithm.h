@@ -26,8 +26,8 @@ Algorithm *new_algorithm(OnProcessArrive, OnProcessReady, OnProcessGet, OnProces
 
 /**
  * Alloates a new algorithm that uses a queue as an argument
- * @param OnProcessStart callback for starting a process
- * @param OnProcessNext callback for finishing a process time slice
+ * @param OnProcessGet callback to get a process for a time slice
+ * @param OnProcessPut callback to put back a process after a time slice
  * @return the algorithm instance
  */
 Algorithm *new_queue_algorithm(Queue *queue, OnProcessGet, OnProcessPut);

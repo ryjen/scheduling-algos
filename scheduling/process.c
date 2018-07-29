@@ -20,12 +20,18 @@ struct process {
   int status;
   // the time the process completed
   int complete;
- 
+
   // how many ticks serviced so far
   int total_ticks;
   // the ticks serviced before premption
   int ticks;
+
+  void (*work)();
 };
+
+static void __process_work() {
+  // TODO: define process work
+}
 
 Process *new_process(const char *name) {
   Process *p = (Process *) malloc(sizeof(Process));
@@ -41,6 +47,7 @@ Process *new_process(const char *name) {
   p->complete = 0;
   p->ticks = 0;
   p->total_ticks = 0;
+  p->work = __process_work;
   return p;
 }
 
@@ -151,6 +158,7 @@ int process_run(Process *p) {
     return PROCESS_END;
   }
 
+  p->work();
   p->ticks++;
   p->total_ticks++;
 
@@ -173,4 +181,5 @@ int process_current_tick(Process *p) {
 
   return p->ticks;
 }
+
 

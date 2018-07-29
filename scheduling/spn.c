@@ -46,7 +46,7 @@ int main() {
 
   // read the processes
   scheduler_read_processes(sched);
-  
+
   // run
   int result = scheduler_run(sched);
 

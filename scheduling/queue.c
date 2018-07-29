@@ -39,7 +39,7 @@ static QueueItem *__new_queue_item() {
   queue->next = NULL;
   queue->prev = NULL;
   queue->process = NULL;
- 
+
   return queue;
 }
 void delete_queue(Queue *queue) {
@@ -117,7 +117,7 @@ static QueueItem* __queue_append(Queue *list, QueueItem *item) {
   return next;
 }
 
-static QueueItem *__queue_insert(Queue *list, QueueItem *item) {
+static QueueItem *__queue_prepend(Queue *list, QueueItem *item) {
   if (list == NULL || item == NULL) {
     return NULL;
   }
@@ -178,7 +178,7 @@ int queue_push_front(Queue *list, Process *p) {
 
   item->process = p;
 
-  __queue_insert(list, item);
+  __queue_prepend(list, item);
 
   return 0;
 }
@@ -235,7 +235,7 @@ static Queue *__queue_sort(Queue *list, Comparator comparator) {
       __queue_append(right, it); 
     }
   }
-    
+
   left = __queue_sort(left, comparator);
   right = __queue_sort(right, comparator);
 

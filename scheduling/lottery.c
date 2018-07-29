@@ -97,8 +97,9 @@ int __distribution_simple(Lottery *l) {
   for (int i = 0, p = 0; i < NUM_TICKETS; i++) {
     l->ticket_distribution[i] = p;
 
-    if (i % bucket == 0) {
+    if (i == bucket) {
       p++;
+      bucket += bucket;
     }
   }
 
@@ -172,7 +173,7 @@ int main() {
   srand(time(0));
 
   // a new lottery
-  Lottery *lottery = new_lottery(__distribution_service_time);
+  Lottery *lottery = new_lottery(__distribution_simple);
 
   // create the algorithm
   Algorithm *algo = new_algorithm(__lottery_arrive, __lottery_ready, __lottery_get, __lottery_put, lottery);

@@ -8,39 +8,39 @@
 extern int test_assert(int);
 
 static int __queue_test_push_back() {
-    Queue *q = new_queue();
+  Queue *q = new_queue();
 
-    Process *p1 = new_process("P1");
+  Process *p1 = new_process("P1");
 
-    if (queue_push_back(q, p1) == -1) {
-      delete_queue_list(q);
-      return 1;
-    }
+  if (queue_push_back(q, p1) == -1) {
+    delete_queue_list(q);
+    return 1;
+  }
 
-    if (queue_size(q) != 1 || queue_peek_front(q) != p1
-        || queue_peek_back(q) != p1) {
-      delete_queue_list(q);
-      return 1;
-    }
+  if (queue_size(q) != 1 || queue_peek_front(q) != p1
+      || queue_peek_back(q) != p1) {
+    delete_queue_list(q);
+    return 1;
+  }
 
-    Process *p2 = new_process("P2");
+  Process *p2 = new_process("P2");
 
-    if (queue_push_back(q, p2) == -1) {
-      delete_queue_list(q);
-      return 1;
-    }
+  if (queue_push_back(q, p2) == -1) {
+    delete_queue_list(q);
+    return 1;
+  }
 
-    if (queue_size(q) != 2 || queue_peek_front(q) != p1
-        || queue_peek_back(q) != p2) {
-      delete_queue_list(q);
-      return 1;
-    }
+  if (queue_size(q) != 2 || queue_peek_front(q) != p1
+      || queue_peek_back(q) != p2) {
+    delete_queue_list(q);
+    return 1;
+  }
 
-    return 0;
+  return 0;
 }
 
 static int __queue_test_push_front() {
-  
+
   Queue *q = new_queue();
 
   Process *p1 = new_process("P1");
@@ -90,7 +90,7 @@ static int __queue_test_push_front() {
 }
 
 static int __queue_test_pop_back() {
-  
+
   Queue *q = new_queue();
 
   Process *p1 = new_process("P1");
@@ -196,12 +196,12 @@ int queue_test() {
 
   fail |= __queue_test_push_front();
   printf("%-30s : %s\n", "queue_push_front", fail ? "FAIL" : "PASS");
-  
+
   fail |= __queue_test_pop_back();
   printf("%-30s : %s\n", "queue_pop_back", fail ? "FAIL" : "PASS");
-  
+
   fail |= __queue_test_pop_front();
   printf("%-30s : %s\n", "queue_pop_front", fail ? "FAIL" : "PASS");
-  
+
   return fail;
 }

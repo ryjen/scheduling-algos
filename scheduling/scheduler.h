@@ -9,6 +9,13 @@
 Scheduler *new_scheduler(Algorithm *);
 
 /**
+ * Allocates a new scheduler that will keep running
+ * @param Algorithm the algorithm to use
+ * @return the scheduler instance
+ */
+Scheduler *new_scheduler_daemon(Algorithm *);
+
+/**
  * Destroys a scheduler instance
  * @param Scheduler the scheduler instance
  */

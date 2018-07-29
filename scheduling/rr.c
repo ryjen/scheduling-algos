@@ -41,7 +41,7 @@ static int __rr_arrive(Process *p, void *arg) {
   }
 
   RR *rr = (RR*) arg;
-  
+
   return queue_push_back(rr->queue, p);
 }
 
@@ -70,19 +70,19 @@ static int __rr_put(Process *p, void *arg) {
 
   RR *rr = (RR*) arg;
 
-	// process has not reached the quantum...
-	if (process_current_tick(p) < rr->quantum) {
-		// keep it as current
-		return queue_push_front(rr->queue, p);
-	}
+  // process has not reached the quantum...
+  if (process_current_tick(p) < rr->quantum) {
+    // keep it as current
+    return queue_push_front(rr->queue, p);
+  }
 
-	// prempt
-	if (process_prempt(p) == -1) {
-		return -1;
-	}
+  // prempt
+  if (process_prempt(p) == -1) {
+    return -1;
+  }
 
-	// and put on back of queue
-	return queue_push_back(rr->queue, p);
+  // and put on back of queue
+  return queue_push_back(rr->queue, p);
 }
 
 int main(int argc, char *argv[]) {
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
   if (argc > 1) {
     q = atoi(argv[1]);
-  
+
     if (q < 0) {
       q = 1;
     }

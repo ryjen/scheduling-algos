@@ -27,13 +27,14 @@ MLFQ *new_mlfq(int size, int initial_quantum) {
   }
 
   val->queues = calloc(size, sizeof(Queue*));
-  val->size = size;
   val->quantums = calloc(size, sizeof(int));
+  val->size = size;
   val->current_index = 0;
 
   for (int i = 0; i < size; i++) {
     val->queues[i] = new_queue();
     val->quantums[i] = initial_quantum;
+    // increment the quantum for each queue TODO: use callback
     initial_quantum += initial_quantum;
   }
   return val;
@@ -65,7 +66,7 @@ static int __mlfq_arrive(Process *p, void *arg) {
   // always put on back of first queue
   return queue_push_back(data->queues[0], p);
 }
-  
+
 static int __mlfq_ready(void *arg) {
   if (arg == NULL) {
     return -1;
@@ -107,27 +108,32 @@ static int __mlfq_put(Process *p, void *arg) {
 
   MLFQ *data = (MLFQ*) arg;
 
+  // validate current index
+  if (data->current_index < 0 || data->current_index >= data->size) {
+    return -1;
+  }
+
   // get the current queue
   Queue *q = data->queues[data->current_index];
 
-	// process has not reached the quantum...
-	if (process_current_tick(p) < data->quantums[data->current_index]) {
-		// keep on the current queue
-		return queue_push_front(q, p);
-	}
+  // process has not reached the quantum...
+  if (process_current_tick(p) < data->quantums[data->current_index]) {
+    // keep on the current queue
+    return queue_push_front(q, p);
+  }
 
-	// otherwise, prempt
-	if (process_prempt(p) == -1) {
-		return -1;
-	}
+  // otherwise, prempt
+  if (process_prempt(p) == -1) {
+    return -1;
+  }
 
   // if there is another queue, use it
   if (data->current_index + 1 < data->size) {
     q = data->queues[data->current_index+1];
   }
 
-	// and put on back of queue
-	return queue_push_back(q, p);
+  // and put on back of queue
+  return queue_push_back(q, p);
 }
 
 int main() {
