@@ -1,7 +1,8 @@
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 #include "types.h"
 #include "process.h"
@@ -21,9 +22,9 @@ struct process {
   int complete;
  
   // how many ticks serviced so far
+  int total_ticks;
+  // the ticks serviced before premption
   int ticks;
-  // the quantum counter
-  int quantum;
 };
 
 Process *new_process(const char *name) {
@@ -39,7 +40,7 @@ Process *new_process(const char *name) {
   p->service = 0;
   p->complete = 0;
   p->ticks = 0;
-  p->quantum = 0;
+  p->total_ticks = 0;
   return p;
 }
 
@@ -66,7 +67,7 @@ int process_arrival_time(Process *p) {
 }
 
 int process_current_arrival_time(Process *p) {
-  return p == NULL ? 0 : (p->arrival + p->ticks);
+  return p == NULL ? 0 : (p->arrival + p->total_ticks);
 }
 
 int process_set_arrival_time(Process *p, int value) {
@@ -83,7 +84,7 @@ int process_service_time(Process *p) {
 }
 
 int process_current_service_time(Process *p) {
-  return p == NULL ? 0 : (p->service - p->ticks);
+  return p == NULL ? 0 : (p->service - p->total_ticks);
 }
 
 int process_set_service_time(Process *p, int value) {
@@ -151,25 +152,25 @@ int process_run(Process *p) {
   }
 
   p->ticks++;
-  p->quantum++;
+  p->total_ticks++;
 
-  return p->service - p->ticks;
+  return p->service - p->total_ticks;
 }
 
-int process_finish(Process *p) {
+int process_prempt(Process *p) {
   if (p == NULL) {
     return -1;
   }
 
-  p->quantum = 0;
+  p->ticks = 0;
   return 0;
 }
 
-int process_quantum(Process *p) {
+int process_current_tick(Process *p) {
   if (p == NULL) {
     return -1;
   }
 
-  return p->quantum;
+  return p->ticks;
 }
 

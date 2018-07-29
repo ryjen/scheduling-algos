@@ -16,8 +16,6 @@
 struct scheduler {
 	// a queue for new arrivals
 	Queue *arrivals;
-	// a processing queue
-	Queue *queue;
 	// completed processes queue
 	Queue *completed;
 	// the specified algorithm to find the next process
@@ -48,7 +46,6 @@ Scheduler *new_scheduler(Algorithm *algo) {
 	}
 
 	value->arrivals = new_queue();
-	value->queue = new_queue();
 	value->completed = new_queue();
 
 	value->algorithm = algo;
@@ -71,7 +68,6 @@ Scheduler *new_scheduler(Algorithm *algo) {
  */
 void delete_scheduler(Scheduler *value) {
 	delete_queue_list(value->arrivals);
-	delete_queue_list(value->queue);
 	delete_queue(value->completed);
 
 	delete_algorithm(value->algorithm);
@@ -114,78 +110,6 @@ static int __scheduler_has_new_arrival(Scheduler *sched) {
 	Process *p = queue_peek_front(sched->arrivals);
 
 	return process_arrival_time(p) <= sched->tick;
-}
-
-/**
- * handles premption for quantum times
- * @param sched the scheduler instance
- * @param p the process instance
- * @return 0 on success, -1 on error
- */
-static int __scheduler_quantum_prempt(Scheduler *sched, Process *p) {
-	if (sched == NULL || p == NULL) {
-		return -1;
-	}
-
-	// non-premptive just keep the current process
-	if (!algorithm_premptive(sched->algorithm)) {
-		return queue_push_front(sched->queue, p);
-	}
-
-	int q = algorithm_quantum(sched->algorithm);
-
-	// process has not reached the quantum...
-	if (process_quantum(p) < q) {
-		// keep it as current
-		return queue_push_front(sched->queue, p);
-	}
-
-	// prempt
-	if (process_finish(p) == -1) {
-		return -1;
-	}
-
-	// and put on back of queue
-	return queue_push_back(sched->queue, p);
-}
-
-/**
- * handles premption for service times
- * @param sched the scheduler instance
- * @param p the process instance
- * @return 0 on success, -1 on error
- */
-static int __scheduler_service_prempt(Scheduler *sched, Process *p) {
-
-	if (sched == NULL || p == NULL) {
-		return -1;
-	}
-
-	// non-premptive....
-	if (!algorithm_premptive(sched->algorithm)) {
-		// put new process on back of queue
-		return queue_push_back(sched->queue, p);
-	}
-
-	Process *curr = queue_peek_front(sched->queue);
-
-	// current process least service time...
-	if (process_compare_current_service_times(curr, p) < 0) {
-		// put new process on back of queue
-		return queue_push_back(sched->queue, p);
-	}
-
-	// prempt the current
-	if (process_finish(curr) == -1) {
-		return -1;
-	}
-
-	// then set the next process as current
-	if (queue_push_front(sched->queue, p) == -1) {
-		return -1;
-	}
-
-	return 0;
 }
 
 /**
@@ -238,9 +162,11 @@ static void *__scheduler_produce(void *arg) {
 		if (p != NULL) {
 
       // prempt based on service time
-			err = __scheduler_service_prempt(sched, p);
+			// err = __scheduler_service_prempt(sched, p);
 
-			if (__scheduler_error(sched, err, "scheduler_queue_process")) {
+      err = algorithm_process_arrive(sched->algorithm, p);
+
+			if (__scheduler_error(sched, err, "algorithm_new_arrival")) {
 				break;
 			}
 		}
@@ -277,7 +203,7 @@ static void *__scheduler_produce(void *arg) {
  */
 int __scheduler_wait_for_new_process(Scheduler *sched) {
 		// while there is nothing in the queue...
-		while (queue_is_empty(sched->queue)) {
+		while (!algorithm_process_exists(sched->algorithm)) {
 			if (pthread_cond_wait(&sched->can_consume, &sched->lock)) {
 				return -1;
 			}
@@ -315,7 +241,7 @@ static void *__scheduler_consume(void *arg) {
     }
 
     // run the algorithm to find the next process in the queue
-		Process *p = algorithm_run(sched->algorithm, sched->queue);
+		Process *p = algorithm_process_start(sched->algorithm);
 
 		// if there is a process in the queue...
 		if (p != NULL) {
@@ -336,12 +262,12 @@ static void *__scheduler_consume(void *arg) {
 					err = queue_push_back(sched->completed, p);
 					break;
 				case -1:
-					// handle funkiness
+					// record funkiness
 					sched->status = SCHEDULER_ERROR;
 					break;
 				default: 
 					// prempt process if needed
-          err = __scheduler_quantum_prempt(sched, p);
+          err = algorithm_process_finish(sched->algorithm, p);
 					break;
 
 			}
@@ -353,7 +279,7 @@ static void *__scheduler_consume(void *arg) {
 
 		// quick check to stop the consumer if producer is done
 		if (sched->status == SCHEDULER_DONE) {
-			if (queue_size(sched->queue) == 0) {
+			if (!algorithm_process_exists(sched->algorithm)) {
 				sched->status = SCHEDULER_END;
 			}
 		}
@@ -543,18 +469,6 @@ static int __process_wait_time_iterator(Queue *list, int index, Process *p, void
 	return QUEUE_ITERATE_NEXT;
 }
 
-static int __process_service_time_iterator(Queue *list, int index, Process *p, void *arg) {
-  if (list == NULL || arg == NULL || p == NULL || index == -1) {
-    return -1;
-  }
-
-  int *total = (int*) arg;
-
-  *total += process_service_time(p);
-
-  return QUEUE_ITERATE_NEXT;
-}
-
 float scheduler_avg_turnaround_time(Scheduler *sched) {
 
 	if (sched == NULL || sched->status != SCHEDULER_END) {
@@ -583,19 +497,4 @@ float scheduler_avg_wait_time(Scheduler *sched) {
 
 	return (float) total / (float) queue_size(sched->completed);
 }
-
-int scheduler_total_remaining_service_time(Scheduler *sched) {
-  if (sched == NULL) {
-    return -1;
-  }
-
-  int total = 0;
-
-  if (queue_iterate(sched->queue, __process_service_time_iterator, &total) == -1) {
-    return -1;
-  }
-
-  return total;
-}
-
 

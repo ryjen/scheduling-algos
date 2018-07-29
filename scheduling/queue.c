@@ -292,6 +292,21 @@ Process *queue_peek_back(Queue *list) {
   return list->last->process;
 }
 
+Process *queue_peek_at(Queue *list, int index) {
+  if (list == NULL || index < 0) {
+    return NULL;
+  }
+
+  int pos = 0;
+
+  for (QueueItem *it = list->first; it; it = it->next, pos++) {
+    if (pos == index) {
+      return it->process;
+    }
+  }
+  return NULL;
+}
+
 int queue_remove(Queue *list, Process *p) {
   if (list == NULL || p == NULL) {
     return -1;

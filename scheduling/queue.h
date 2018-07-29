@@ -1,6 +1,12 @@
 #ifndef RYJEN_OS_QUEUE_H
 #define RYJEN_OS_QUEUE_H
 
+// A comparator for queues
+typedef int (*Comparator) (Process *, Process *);
+
+// An iterator for queues
+typedef int (*Iterator) (Queue *, int, Process *, void *);
+
 /**
  * Allocates a new queue
  * @return the queue instance
@@ -69,6 +75,14 @@ Process *queue_peek_front(Queue *);
  * @return the process at the back of the queue
  */
 Process *queue_peek_back(Queue *);
+
+/**
+ * Peeks at an index in the queue
+ * @param Queue the queue instance
+ * @param int the index of the process
+ * @return the process or NULL if not found
+ */
+Process *queue_peek_at(Queue *, int);
 
 /**
  * Removes a process from the queue

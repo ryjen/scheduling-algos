@@ -125,14 +125,14 @@ int process_set_completion_time(Process *, int);
  * @param Process the process instance
  * @return 0 on success, -1 on error
  */
-int process_finish(Process *);
+int process_prempt(Process *);
 
 /**
  * Gets the process quantum, or how long the process has been running
  * @param Process the process instance
  * @return the process quantum as an integer
  */
-int process_quantum(Process *);
+int process_current_tick(Process *);
 
 #endif
 

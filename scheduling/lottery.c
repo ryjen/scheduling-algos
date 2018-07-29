@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "types.h"
 #include "scheduler.h"
@@ -14,147 +15,165 @@
 // a lottery type
 typedef struct lottery Lottery;
 
+typedef int (*OnDistribution)(Lottery *);
+
 // lottery data
 struct lottery {
-  // total amount of service time remaining
-  int total_service_time;
+  // an array of process indexes;
+  int ticket_distribution[NUM_TICKETS];
+  // a callback to distribute tickets
+  OnDistribution on_distribution;
   // an array of current processes
-  Process **processes;
-  // the winning ticket value
-  int winning_ticket;
-  // the winning process
-  Process *winner;
+  Queue *queue;
 };
 
+Lottery *new_lottery(OnDistribution distributer) {
+  Lottery *l = malloc(sizeof(Lottery));
+  if (l == NULL) {
+    abort();
+  }
+  memset(l->ticket_distribution, 0, NUM_TICKETS * sizeof(int));
+  l->on_distribution = distributer;
+  l->queue = new_queue();
+  return l;
+}
+
+void delete_lottery(Lottery *l) {
+  if (l == NULL) {
+    return;
+  }
+  delete_queue_list(l->queue);
+  free(l);
+}
+
 // simply iterates processes to find the total service time
-static int __build_lottery_info(Queue *queue, int index, Process *p, void *arg) {
+static int __process_service_time_iterator(Queue *queue, int index, Process *p, void *arg) {
   if (queue == NULL || index == -1 || p == NULL || arg == NULL) {
     return -1;
   }
-
-  Lottery *list = (Lottery *) arg;
+  
+  int *total = (int *) arg;
  
-  list->total_service_time += process_service_time(p);
-
-  list->processes[index] = p;
+  *total += process_current_service_time(p);
 
   return QUEUE_ITERATE_NEXT;
 }
 
-static int __qsort_processes(const void *a, const void *b) {
-  return process_service_time((Process*) a) - process_service_time((Process*) b);
+static int __lottery_arrive(Process *p, void *arg) {
+  if (p == NULL || arg == NULL) {
+    return -1;
+  }
+
+  Lottery *l = (Lottery*) arg;
+
+  if (queue_push_back(l->queue, p)) {
+    return -1;
+  }
+  
+  // redistribute with new process
+  return l->on_distribution(l);
+}
+
+static int __lottery_exists(void *arg) {
+  if (arg == NULL) {
+    return -1;
+  }
+  Lottery *l = (Lottery*) arg;
+  return !queue_is_empty(l->queue);
 }
 
 // a simple lottery that divides up tickets evenly based on queue size
-Process * __lottery_auto_assign(Queue *list) {
-  if (list == NULL) {
-    return NULL;
+int __lottery_auto_assign_distribution(Lottery *l) {
+  if (l == NULL) {
+    return -1;
   }
 
-  const int qsize = queue_size(list);
-
-  if (qsize <= 1) {
-    return queue_pop_front(list);
-  }
-
-  if (qsize > NUM_TICKETS) {
-    qsize = NUM_TICKETS;
-  }
-
+  const int qsize = queue_size(l->queue);
+ 
   // the bucket size
   int bucket = NUM_TICKETS / qsize;
+ 
+  memset(l->ticket_distribution, 0, NUM_TICKETS * sizeof(int));
 
-  // the winning ticket
-  int winner = rand() % NUM_TICKETS;
+  for (int i = 0, p = 0; i < NUM_TICKETS; i++) {
+    l->ticket_distribution[i] = p;  
 
-  // for each item
-  for (int i = 0, ticket = 0; i < qsize; i++) {
-    // add the bucket
-    ticket += bucket;
-
-    if (ticket > winner) {
-      return queue_remove_at(list, i);
+    if (i == bucket) {
+      bucket += bucket;
+      p++;
     }
   }
 
-  return NULL;
+  return 0;
 }
 
 // an algorithm to auto-assign tickets and a winner
-Process * __lottery_service_time(Queue *list) {
-  if (list == NULL) {
-    return NULL;
+int  __lottery_service_time_distribution(Lottery *l) {
+  if (l == NULL) {
+    return -1;
   }
 
-  const int qsize = queue_size(list);
+  const int qsize = queue_size(l->queue);
 
-  // if there is only one item
-  if (qsize <= 1) {
-    // quickly return it
-    return queue_pop_front(list);
+  int total_service_time = 0;
+
+  if (queue_iterate(l->queue, __process_service_time_iterator, &total_service_time)) {
+    return -1;
   }
-
-  if (qsize > NUM_TICKETS) {
-    qsize = NUM_TICKETS;
-  }
-
-  Lottery lottery;
-
-  // assign lottery winning ricket
-  lottery.winning_ticket = rand() % NUM_TICKETS;
-
-  // initialize lottery data
-  lottery.winner = NULL;
-  lottery.total_service_time = 0;
-  
-  // allocate dynamic data
-  lottery.processes = calloc(qsize, sizeof(Process*));
-
-  // first, build the lottery info from the queue
-  if (queue_iterate(list, __build_lottery_info, &lottery) == -1) {
-    return NULL;
-  }
-
-  // sort the processes on service time in ascending order
-  qsort(lottery.processes, qsize, sizeof(Process*), __qsort_processes);
 
   // determine the ticket for a process and check for a winner
-  for (int i = 0, ticket = 0; i < qsize; i++) {
-    Process *p = lottery.processes[i];
+  for (int i = 0, tickets = 0; i < qsize; i++) {
+    Process *p = queue_peek_at(l->queue, i);
     
     // divy up the tickets between 0 and NUM_TICKETS based on service time
-    ticket += (((float) process_service_time(p) / (float) lottery.total_service_time) * (float) NUM_TICKETS);
- 
-    if (ticket > lottery.winning_ticket) {
-      lottery.winner = p;
-      break;
-    }
+    int num_tickets = (((float) process_current_service_time(p) / (float) total_service_time) * (float) NUM_TICKETS);
+    
+    memset(&l->ticket_distribution[tickets], i, num_tickets);
+
+    tickets += num_tickets;
   }
 
-  // cleanup
-  free(lottery.processes);
+  return 0;
+}
 
-  // no winner?
-  if (lottery.winner == NULL) {
-    puts("Error no lottery winner");
+static Process *__lottery_start(void *arg) {
+  if (arg == NULL) {
     return NULL;
   }
 
-  // remove the winner from the queue
-  if (queue_remove(list, lottery.winner) == -1) {
-    return NULL;
+  Lottery *l = (Lottery *) arg;
+
+  int ticket = rand() % NUM_TICKETS;
+
+  int winner = l->ticket_distribution[ticket];
+
+  return queue_remove_at(l->queue, winner);
+}
+
+static int __lottery_finish(Process *p, void *arg) {
+  if (arg == NULL) {
+    return -1;
   }
 
-  // return the winner
-  return lottery.winner;
+  Lottery *l = (Lottery*) arg;
+
+  // put back on queue
+  if (queue_push_back(l->queue, p)) {
+    return -1;
+  }
+
+  // and redistribute tickets
+  return l->on_distribution(l);
 }
 
 int main() {
 
   srand(time(0));
 
+  Lottery *lottery = new_lottery(__lottery_service_time_distribution);
+
   // create the algorithm
-  Algorithm *algo = new_algorithm(__lottery_auto_assign);
+  Algorithm *algo = new_algorithm(__lottery_arrive, __lottery_exists, __lottery_start, __lottery_finish, lottery);
 
   // create the scheduler
   Scheduler *sched = new_scheduler(algo);
@@ -167,6 +186,8 @@ int main() {
 
   // cleanup
   delete_scheduler(sched);
+
+  delete_lottery(lottery);
 
   return result;
 }

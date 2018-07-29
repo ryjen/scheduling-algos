@@ -4,7 +4,7 @@ CFLAGS = -I. -std=c11 -ggdb -W -Wall -Wvla -Werror -pedantic
 DEPS = scheduler.h process.h types.h queue.h algorithm.h
 LIBS = -lpthread
 
-PROGS = fcfs str spn rr lottery
+PROGS = fcfs str spn rr lottery mlfq
 TEST = test
 
 ODIR = obj
@@ -40,6 +40,10 @@ rr: $(ODIR)/rr.o $(PROG_OBJS)
 	@$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 lottery: $(ODIR)/lottery.o $(PROG_OBJS)
+	@echo "Linking $@"
+	@$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+mlfq: $(ODIR)/mlfq.o $(PROG_OBJS)
 	@echo "Linking $@"
 	@$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
