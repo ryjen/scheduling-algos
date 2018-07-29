@@ -197,16 +197,10 @@ int queue_push_back(Queue *list, Process *p) {
   return 0;
 }
 
-static QueueItem *__queue_item_copy(QueueItem *value) {
-  QueueItem *it = __new_queue_item();
-  it->process = value->process;
-  return it;
-}
-
-Queue *queue_copy(Queue *queue) {
+static Queue *__queue_copy_shallow(Queue *queue) {
   Queue *q = new_queue();
   for(QueueItem *it = queue->first; it; it = it->next) {
-    __queue_append(q, __queue_item_copy(it));
+    __queue_append(q, it);
   }
   return q;
 }
@@ -219,7 +213,7 @@ static Queue *__queue_sort(Queue *list, Comparator comparator) {
 
 
   if (list->first == NULL || list->first->next == NULL) {
-    return queue_copy(list);
+    return __queue_copy_shallow(list);
   }
 
   Queue *left = new_queue();
