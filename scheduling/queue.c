@@ -31,7 +31,7 @@ Queue *new_queue() {
 }
 
 static QueueItem *__new_queue_item() {
-  QueueItem *queue = (QueueItem *) malloc(sizeof(Queue));
+  QueueItem *queue = (QueueItem *) malloc(sizeof(QueueItem));
 
   if (queue == NULL) {
     abort();
@@ -62,6 +62,19 @@ void delete_queue_list(Queue *list) {
   }
   for (QueueItem *next = NULL, *it = list->first; it; it = next) {
     next = it->next;
+    __delete_queue_item(it);
+  }
+  delete_queue(list);
+}
+
+void delete_queue_processes(Queue *list) {
+  if (list == NULL) {
+    return;
+  }
+
+  for (QueueItem *next = NULL, *it = list->first; it; it = next) {
+    next = it->next;
+    delete_process(it->process);
     __delete_queue_item(it);
   }
   delete_queue(list);
@@ -138,37 +151,6 @@ static QueueItem *__queue_prepend(Queue *list, QueueItem *item) {
   return prev;
 }
 
-static Queue *__queue_merge(Queue *left, Queue *right, Comparator compare) {
-  if (left == NULL || right == NULL) {
-    return NULL;
-  }
-
-  Queue *result = new_queue();
-
-  QueueItem *l = left->first;
-  QueueItem *r = right->first;
-
-  while(l != NULL && r != NULL) {
-    if (compare(l->process, r->process) <= 0) {
-      l = __queue_append(result, l);
-    } else {
-      r = __queue_append(result, r);
-    }
-  }
-
-  while (l != NULL) {
-    l = __queue_append(result, l);
-  }
-  while (r != NULL) {
-    r = __queue_append(result, r);
-  }
-
-  delete_queue(left);
-  delete_queue(right);
-
-  return result;
-}
-
 int queue_push_front(Queue *list, Process *p) {
   if (list == NULL || p == NULL) {
     return -1;
@@ -197,23 +179,39 @@ int queue_push_back(Queue *list, Process *p) {
   return 0;
 }
 
-static Queue *__queue_copy_shallow(Queue *queue) {
-  Queue *q = new_queue();
-  for(QueueItem *it = queue->first; it; it = it->next) {
-    __queue_append(q, it);
+static int __queue_merge(Queue *result, Queue *left, Queue *right, Comparator compare) {
+  if (left == NULL || right == NULL) {
+    return -1;
   }
-  return q;
-}
 
-static Queue *__queue_sort(Queue *list, Comparator comparator) {
+  QueueItem *l = left->first;
+  QueueItem *r = right->first;
+
+  while(l != NULL && r != NULL) {
+    if (compare(l->process, r->process) <= 0) {
+      l = __queue_append(result, l);
+    } else {
+      r = __queue_append(result, r);
+    }
+  }
+
+  while (l != NULL) {
+    l = __queue_append(result, l);
+  }
+  while (r != NULL) {
+    r = __queue_append(result, r);
+  }
+
+  return 0;
+}
+static int __queue_sort(Queue *list, Comparator comparator) {
 
   if (list == NULL) {
-    return NULL;
+    return -1;
   }
 
-
   if (list->first == NULL || list->first->next == NULL) {
-    return __queue_copy_shallow(list);
+    return 0;
   }
 
   Queue *left = new_queue();
@@ -230,10 +228,29 @@ static Queue *__queue_sort(Queue *list, Comparator comparator) {
     }
   }
 
-  left = __queue_sort(left, comparator);
-  right = __queue_sort(right, comparator);
+  if (__queue_sort(left, comparator)) {
+    return -1;
+  }
+  if (__queue_sort(right, comparator)) {
+    return -1;
+  }
 
-  return __queue_merge(left, right, comparator);
+  if (__queue_merge(list, left, right, comparator)) {
+    return -1;
+  }
+
+  delete_queue(left);
+  delete_queue(right);
+
+  return 0;
+}
+
+int queue_sort(Queue *list, Comparator comparator) {
+  if (list == NULL) {
+    return -1;
+  }
+
+  return __queue_sort(list, comparator);
 }
 
 Process *queue_pop_front(Queue *list) {
@@ -338,23 +355,6 @@ Process* queue_remove_at(Queue *list, int index) {
   return NULL;
 }
 
-int queue_sort(Queue *list, Comparator comparator) {
-  if (list == NULL) {
-    return -1;
-  }
-
-  Queue *result = __queue_sort(list, comparator);
-
-  if (result == NULL) {
-    return -1;
-  }
-
-  list->first = result->first;
-  list->last = result->last;
-
-  delete_queue(result);
-  return 0;
-}
 
 int queue_iterate(Queue *queue, Iterator iterator, void *arg) {
 

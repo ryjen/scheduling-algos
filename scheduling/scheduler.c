@@ -88,8 +88,9 @@ Scheduler *new_scheduler_daemon(Algorithm *algo) {
  * @param value the scheduler instance
  */
 void delete_scheduler(Scheduler *value) {
-  delete_queue_list(value->arrivals);
-  delete_queue(value->completed);
+
+  delete_queue_processes(value->arrivals);
+  delete_queue_processes(value->completed);
 
   delete_algorithm(value->algorithm);
 
@@ -97,6 +98,8 @@ void delete_scheduler(Scheduler *value) {
 
   pthread_cond_destroy(&value->can_consume);
   pthread_cond_destroy(&value->can_produce);
+
+  free(value);
 }
 
 

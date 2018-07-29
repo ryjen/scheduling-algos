@@ -20,17 +20,16 @@ Queue *new_queue();
 void delete_queue(Queue *);
 
 /**
- * Destroys a queue and all its contents.
+ * Destroys a queue and all its items.
  * @param Queue the queue instance
  */
 void delete_queue_list(Queue *);
 
 /**
- * Copies a queue (shallow)
+ * Destroys a queue and all its item values
  * @param Queue the queue instance
- * @return a copy of the queue
  */
-Queue *queue_copy(Queue *);
+void delete_queue_processes(Queue *);
 
 /**
  * Pushes a process on the back of the queue
