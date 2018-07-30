@@ -63,7 +63,7 @@ static int __mlfq_arrive(Process *p, void *arg) {
 
   MLFQ *data = (MLFQ*) arg;
 
-  // always put on back of first queue
+  // always put on back of top level queue
   return queue_push_back(data->queues[0], p);
 }
 
@@ -82,19 +82,21 @@ static int __mlfq_ready(void *arg) {
   return 0;
 }
 
-static Process * __mlfq_get(void *arg) {
+static Process *__mlfq_get(void *arg) {
   if (arg == NULL) {
     return NULL;
   }
 
   MLFQ *data = (MLFQ*) arg;
 
-  // first non empty queue
+  // TODO: promote up from lower level queues if needed
+
+  // first non empty queue from the top level
   for (int i = 0; i < data->size; i++) {
     if (!queue_is_empty(data->queues[i])) {
-      // track the current index
+      // track the current index (hacky)
       data->current_index = i;
-      // return the first process
+      // return the first process in FIFO queue
       return queue_pop_front(data->queues[i]);
     }
   }
@@ -127,12 +129,14 @@ static int __mlfq_put(Process *p, void *arg) {
     return -1;
   }
 
-  // if there is another queue, use it
-  if (data->current_index + 1 < data->size) {
-    q = data->queues[data->current_index+1];
+  // if there is another queue, demote the process
+  int next_queue = data->current_index + 1;
+
+  if (next_queue < data->size) {
+    q = data->queues[next_queue];
   }
 
-  // and put on back of queue
+  // and put on back of FIFO queue
   return queue_push_back(q, p);
 }
 
