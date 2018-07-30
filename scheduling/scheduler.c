@@ -143,7 +143,7 @@ static int __scheduler_has_new_arrival(Scheduler *sched) {
  * @param sched the scheduler instance
  * @return 0 on success, -1 on error
  */
-int __scheduler_wait_for_new_arrival(Scheduler *sched) {
+static int __scheduler_wait_for_new_arrival(Scheduler *sched) {
   // while there is no new arrival...
   while(!__scheduler_has_new_arrival(sched)) {
 
@@ -227,7 +227,7 @@ static void *__scheduler_produce(void *arg) {
  * @param sched the scheduler instance
  * @return 0 on success, -1 on error
  */
-int __scheduler_wait_for_new_process(Scheduler *sched) {
+static int __scheduler_wait_for_new_process(Scheduler *sched) {
   // test the algorithm doesn't have a process ready
   while (!algorithm_process_ready(sched->algorithm)) {
     if (pthread_cond_wait(&sched->can_consume, &sched->lock)) {

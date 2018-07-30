@@ -5,8 +5,6 @@
 #include "queue.h"
 #include "process.h"
 
-extern int test_assert(int);
-
 static int __queue_test_push_back() {
   Queue *q = new_queue();
 
