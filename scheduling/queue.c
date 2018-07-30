@@ -204,7 +204,7 @@ static int __queue_merge(Queue *result, Queue *left, Queue *right, Comparator co
 
   return 0;
 }
-static int __queue_sort(Queue *list, Comparator comparator) {
+static int __queue_merge_sort(Queue *list, Comparator comparator) {
 
   if (list == NULL) {
     return -1;
@@ -228,10 +228,10 @@ static int __queue_sort(Queue *list, Comparator comparator) {
     }
   }
 
-  if (__queue_sort(left, comparator)) {
+  if (__queue_merge_sort(left, comparator)) {
     return -1;
   }
-  if (__queue_sort(right, comparator)) {
+  if (__queue_merge_sort(right, comparator)) {
     return -1;
   }
 
@@ -250,7 +250,7 @@ int queue_sort(Queue *list, Comparator comparator) {
     return -1;
   }
 
-  return __queue_sort(list, comparator);
+  return __queue_merge_sort(list, comparator);
 }
 
 Process *queue_pop_front(Queue *list) {
