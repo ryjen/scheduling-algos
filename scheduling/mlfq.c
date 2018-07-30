@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "types.h"
 #include "scheduler.h"
@@ -140,9 +141,24 @@ static int __mlfq_put(Process *p, void *arg) {
   return queue_push_back(q, p);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+  int quantum = 3;
+  int queues = 3;
 
-  MLFQ *data = new_mlfq(3, 3);
+  if (argc > 1) {
+    queues = atoi(argv[1]);
+
+    if (argc > 2) {
+      quantum = atoi(argv[2]);
+    }
+  }
+
+  if (queues < 0 || quantum < 0) {
+    puts("invalid argument");
+    return 1;
+  }
+
+  MLFQ *data = new_mlfq(queues, quantum);
 
   // create the algorithm
   Algorithm *algo = new_algorithm(__mlfq_arrive, __mlfq_ready, __mlfq_get, __mlfq_put, data);

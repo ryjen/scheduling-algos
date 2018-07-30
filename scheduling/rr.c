@@ -87,17 +87,18 @@ static int __rr_put(Process *p, void *arg) {
 
 int main(int argc, char *argv[]) {
 
-  int q = 3;
+  int quantum = 3;
 
   if (argc > 1) {
-    q = atoi(argv[1]);
+    quantum = atoi(argv[1]);
 
-    if (q < 0) {
-      q = 1;
+    if (quantum < 0) {
+      puts("invalid argument");
+      return 1;
     }
   }
 
-  RR *data = new_round_robin(q);
+  RR *data = new_round_robin(quantum);
 
   // create the algorithm
   Algorithm *algo = new_algorithm(__rr_arrive, __rr_ready, __rr_get, __rr_put, data);
