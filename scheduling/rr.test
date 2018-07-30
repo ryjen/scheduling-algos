@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+
+function test_service() {
+
+  case $1 in
+    00)
+      [ "$2" = "A" ] && [ "$3" = "09" ] && return 0
+      ;;
+    01)
+      [ "$2" = "A" ] && [ "$3" = "08" ] && return 0
+      ;;
+    02)
+      [ "$2" = "A" ] && [ "$3" = "07" ] && return 0
+      ;;
+    03)
+      [ "$2" = "B" ] && [ "$3" = "06" ] && return 0
+      ;;
+    04)
+      [ "$2" = "B" ] && [ "$3" = "05" ] && return 0
+      ;;
+    05)
+      [ "$2" = "B" ] && [ "$3" = "04" ] && return 0
+      ;;
+    06)
+      [ "$2" = "A" ] && [ "$3" = "06" ] && return 0
+      ;;
+    07)
+      [ "$2" = "A" ] && [ "$3" = "05" ] && return 0
+      ;;
+    08)
+      [ "$2" = "A" ] && [ "$3" = "04" ] && return 0
+      ;;
+    09)
+      [ "$2" = "C" ] && [ "$3" = "03" ] && return 0
+      ;;
+    10)
+      [ "$2" = "C" ] && [ "$3" = "02" ] && return 0
+      ;;
+    11)
+      [ "$2" = "C" ] && [ "$3" = "01" ] && return 0
+      ;;
+    12)
+      [ "$2" = "B" ] && [ "$3" = "03" ] && return 0
+      ;;
+    13)
+      [ "$2" = "B" ] && [ "$3" = "02" ] && return 0
+      ;;
+    14)
+      [ "$2" = "B" ] && [ "$3" = "01" ] && return 0
+      ;;
+    15)
+      [ "$2" = "D" ] && [ "$3" = "05" ] && return 0
+      ;;
+    16)
+      [ "$2" = "D" ] && [ "$3" = "04" ] && return 0
+      ;;
+    17)
+      [ "$2" = "D" ] && [ "$3" = "03" ] && return 0
+      ;;
+    18)
+      [ "$2" = "A" ] && [ "$3" = "03" ] && return 0
+      ;;
+    19)
+      [ "$2" = "A" ] && [ "$3" = "02" ] && return 0
+      ;;
+    20)
+      [ "$2" = "A" ] && [ "$3" = "01" ] && return 0
+      ;;
+    21)
+      [ "$2" = "E" ] && [ "$3" = "03" ] && return 0
+      ;;
+    22)
+      [ "$2" = "E" ] && [ "$3" = "02" ] && return 0
+      ;;
+    23)
+      [ "$2" = "E" ] && [ "$3" = "01" ] && return 0
+      ;;
+    24)
+      [ "$2" = "D" ] && [ "$3" = "02" ] && return 0
+      ;;
+    25)
+      [ "$2" = "D" ] && [ "$3" = "01" ] && return 0
+      ;;
+  esac
+
+  return 1
+}
+
+function test_arrival() {
+
+  case $1 in
+    00)
+      [ "$2" = "A" ] && [ "$3" = "00" ] && return 0
+      ;;
+    02)
+      [ "$2" = "B" ] && [ "$3" = "02" ] && return 0
+      ;;
+    04)
+      [ "$2" = "C" ] && [ "$3" = "04" ] && return 0
+      ;;
+    06)
+      [ "$2" = "D" ] && [ "$3" = "06" ] && return 0
+      ;;
+    09)
+      [ "$2" = "E" ] && [ "$3" = "09" ] && return 0
+      ;;
+  esac
+
+  return 1
+}
+
+STATUS=0
+
+echo "Starting test..."
+
+QUANTUM=3
+
+if [[ ! -z "$1" ]]; then
+  QUANTUM=$1
+fi
+
+if [[ "$QUANTUM" != 3 ]]; then
+  echo "Only quantums of 3 are supported for testing round robin"
+  exit 1
+fi
+
+while read LINE; do
+
+  IN=($LINE)
+
+  KEY=${IN[0]}
+
+  if [[ "$KEY" != "Time" ]]; then
+    continue
+  fi
+
+  TICK=${IN[1]}
+  NAME=${IN[4]}
+  TYPE=${IN[5]}
+  VALUE=${IN[6]}
+
+  echo -n "Testing $TICK : Process $NAME $TYPE $VALUE"
+
+  case $TYPE in
+    "Arrival")
+      test_arrival $TICK $NAME $VALUE
+      ;;
+    "Service")
+      test_service $TICK $NAME $VALUE
+      ;;
+  esac
+
+  if [ $? != 0 ]; then
+    echo -e " \033[1;31mFAILED\033[0m"
+    let STATUS=1
+  else
+    echo -e " \033[1;32mPASS\033[0m"
+  fi
+
+  sync
+
+done
+
+exit $STATUS
+
+

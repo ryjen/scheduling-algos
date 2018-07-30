@@ -186,6 +186,9 @@ static void *__scheduler_produce(void *arg) {
     Process *p = queue_pop_front(sched->arrivals);
 
     if (p != NULL) {
+      
+      printf("Time %02d : Process %s Arrival %02d\n", sched->tick, process_name(p), 
+          process_arrival_time(p));
 
       // pass to the algorithm to insert in its queue
       err = algorithm_process_arrive(sched->algorithm, p);
@@ -273,8 +276,8 @@ static void *__scheduler_consume(void *arg) {
     if (p != NULL) {
 
       // output and update tick count
-      printf("Time %02d : Process %s Arrival %02d Service %02d\n", sched->tick, process_name(p), 
-          process_current_arrival_time(p), process_current_service_time(p));
+      printf("Time %02d : Process %s Service %02d\n", sched->tick, process_name(p), 
+          process_current_service_time(p));
 
       sched->tick++;
 
