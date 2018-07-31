@@ -172,9 +172,14 @@ int  __distribution_service_time(Lottery *l) {
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
 
-  srand(time(0));
+  if (argc > 1) {
+    int seed = atoi(argv[1]);
+    srand(seed);
+  } else {
+    srand(time(0));
+  }
 
   // a new lottery
   Lottery *lottery = new_lottery(__distribution_service_time);
