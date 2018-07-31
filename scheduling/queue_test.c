@@ -187,6 +187,99 @@ static int __queue_test_pop_front() {
   return 0;
 }
 
+static int __queue_test_sort() {
+
+  Queue *q = new_queue();
+
+  Process *p1 = new_process("P1");
+
+  process_set_arrival_time(p1, 2);
+
+  if (queue_push_back(q, p1) == -1) {
+    return 1;
+  }
+
+  Process *p2 = new_process("P2");
+
+  process_set_arrival_time(p2, 6);
+
+  if (queue_push_back(q, p2) == -1) {
+    return 1;
+  }
+
+  Process *p3 = new_process("P3");
+
+  process_set_arrival_time(p3, 0);
+
+  if (queue_push_back(q, p3) == -1) {
+    return 1;
+  }
+
+  if (queue_sort(q, process_compare_arrival_times) == -1) {
+    return 1;
+  }
+
+  Process *p = queue_pop_front(q);
+
+  if (p != p3) {
+    printf("expected %s got %s", process_name(p3), process_name(p));
+    return 1;
+  }
+
+  p = queue_pop_front(q);
+
+  if (p != p1) {
+    printf("expected %s got %s", process_name(p1), process_name(p));
+    return 1;
+  }
+
+  p = queue_pop_front(q);
+
+  if (p != p2) {
+    printf("expected %s got %s", process_name(p2), process_name(p));
+    return 1;
+  }
+
+  delete_queue_processes(q);
+
+  return 0;
+}
+
+int __queue_test_remove() {
+
+  Queue *queue = new_queue();
+
+  Process *p1 = new_process();
+
+  if (queue_push_back(queue, p1)) {
+    return 1;
+  }
+
+  Process *p2 = new_process();
+
+  if (queue_push_back(queue, p2)) {
+    return 1;
+  }
+
+  if (queue_size(queue) != 2) {
+    return 1;
+  }
+
+  if (queue_remove(queue, p1)) {
+    printf("unable to remove process");
+    return 1;
+  }
+
+  Process *p = queue_pop_front(queue);
+
+  if (p != p2) {
+    printf("expected %s got %s\n", process_name(p2), process_name(p));
+    return 1;
+  }
+
+  return 0;
+}
+
 int queue_test() {
 
   int fail = __queue_test_push_back();
@@ -200,6 +293,12 @@ int queue_test() {
 
   fail |= __queue_test_pop_front();
   printf("%-30s : %s\n", "queue_pop_front", fail ? "FAIL" : "PASS");
+
+  fail |= __queue_test_sort();
+  printf("%-30s : %s\n", "queue_sort", fail ? "FAIL" : "PASS");
+
+  fail |= __queue_test_remove();
+  printf("%-30s : %s\n", "queue_remove", fail ? "FAIL" : "PASS");
 
   return fail;
 }
