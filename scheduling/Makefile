@@ -1,18 +1,18 @@
 CC = gcc
-CFLAGS = -I. -std=c11 -ggdb -W -Wall -Wvla -Werror -pedantic
+CFLAGS = -I. -I../queue -std=c11 -ggdb -W -Wall -Wvla -Werror -pedantic -L../queue
 
-DEPS = scheduler.h process.h types.h queue.h algorithm.h
-LIBS = -lpthread
+DEPS = scheduler.h process.h types.h algorithm.h
+LIBS = -lpthread -lqueue
 
 PROGS = fcfs str spn rr lottery mlfq
 TEST = test
 
 ODIR = obj
 
-_PROG_OBJS = scheduler.o process.o queue.o algorithm.o
+_PROG_OBJS = scheduler.o process.o algorithm.o
 PROG_OBJS = $(patsubst %,$(ODIR)/%,$(_PROG_OBJS))
 
-_TEST_OBJS = test.o queue_test.o $(_PROG_OBJS)
+_TEST_OBJS = test.o $(_PROG_OBJS)
 TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
 all: $(ODIR) $(PROGS) $(TEST)

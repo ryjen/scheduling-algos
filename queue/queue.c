@@ -1,15 +1,13 @@
 #include <stdlib.h>
 
-#include "types.h"
 #include "queue.h"
-#include "process.h"
 
 typedef struct queue_item QueueItem;
 
 struct queue_item {
   QueueItem *next;
   QueueItem *prev;
-  Process *process;
+  void *data;
 };
 
 struct queue {
@@ -38,7 +36,7 @@ static QueueItem *__new_queue_item() {
   }
   queue->next = NULL;
   queue->prev = NULL;
-  queue->process = NULL;
+  queue->data = NULL;
 
   return queue;
 }
@@ -67,14 +65,14 @@ void delete_queue_list(Queue *list) {
   delete_queue(list);
 }
 
-void delete_queue_processes(Queue *list) {
+void delete_queue_data(Queue *list) {
   if (list == NULL) {
     return;
   }
 
   for (QueueItem *next = NULL, *it = list->first; it; it = next) {
     next = it->next;
-    delete_process(it->process);
+    delete_queue(it->data);
     __delete_queue_item(it);
   }
   delete_queue(list);
@@ -113,21 +111,22 @@ static QueueItem* __queue_append(Queue *list, QueueItem *item) {
     return NULL;
   }
 
-  if (list->last != NULL) {
-    QueueItem *it = list->last;
+  QueueItem *it = list->last;
+
+  if (it != NULL) {
     it->next = item;
     item->prev = it;
   } else {
     item->prev = NULL;
   }
 
-  QueueItem *next = item->next;
+  it = item->next;
   item->next = NULL;
   list->last = item;
   if (list->first == NULL) {
     list->first = item;
   }
-  return next;
+  return it;
 }
 
 static QueueItem *__queue_prepend(Queue *list, QueueItem *item) {
@@ -135,44 +134,45 @@ static QueueItem *__queue_prepend(Queue *list, QueueItem *item) {
     return NULL;
   }
 
-  if (list->first != NULL) {
-    QueueItem *it = list->first;
+  QueueItem *it = list->first;
+
+  if (it != NULL) {
     it->prev = item;
     item->next = it;
   } else {
     item->next = NULL;
   }
-  QueueItem *prev = item->prev;
+  it = item->prev;
   item->prev = NULL;
   list->first = item;
   if (list->last == NULL) {
     list->last = item;
   }
-  return prev;
+  return it;
 }
 
-int queue_push_front(Queue *list, Process *p) {
+int queue_push_front(Queue *list, void *p) {
   if (list == NULL || p == NULL) {
     return -1;
   }
 
   QueueItem *item = __new_queue_item();
 
-  item->process = p;
+  item->data = p;
 
   __queue_prepend(list, item);
 
   return 0;
 }
 
-int queue_push_back(Queue *list, Process *p) {
+int queue_push_back(Queue *list, void *p) {
   if (list == NULL || p == NULL) {
     return -1;
   }
 
   QueueItem *item = __new_queue_item();
 
-  item->process = p;
+  item->data = p;
 
   __queue_append(list, item);
 
@@ -188,7 +188,7 @@ static int __queue_merge(Queue *result, Queue *left, Queue *right, Comparator co
   QueueItem *r = right->first;
 
   while(l != NULL && r != NULL) {
-    if (compare(l->process, r->process) <= 0) {
+    if (compare(l->data, r->data) <= 0) {
       l = __queue_append(result, l);
     } else {
       r = __queue_append(result, r);
@@ -204,6 +204,7 @@ static int __queue_merge(Queue *result, Queue *left, Queue *right, Comparator co
 
   return 0;
 }
+
 static int __queue_merge_sort(Queue *list, Comparator comparator) {
 
   if (list == NULL) {
@@ -253,14 +254,14 @@ int queue_sort(Queue *list, Comparator comparator) {
   return __queue_merge_sort(list, comparator);
 }
 
-Process *queue_pop_front(Queue *list) {
+void *queue_pop_front(Queue *list) {
   if (list == NULL || list->first == NULL)  {
     return NULL;
   }
 
   QueueItem *item = list->first;
 
-  Process *p = item->process;
+  void *p = item->data;
 
   __queue_unlink(list, item);
 
@@ -269,14 +270,14 @@ Process *queue_pop_front(Queue *list) {
   return p;
 }
 
-Process *queue_pop_back(Queue *list) {
+void *queue_pop_back(Queue *list) {
   if (list == NULL || list->first == NULL) {
     return NULL;
   }
 
   QueueItem *item = list->last;
 
-  Process *p = item->process;
+  void *p = item->data;
 
   __queue_unlink(list, item);
 
@@ -285,25 +286,25 @@ Process *queue_pop_back(Queue *list) {
   return p;
 }
 
-Process *queue_peek_front(Queue *list) {
+void *queue_peek_front(Queue *list) {
 
   if (list == NULL || list->first == NULL) {
     return NULL;
   }
 
-  return list->first->process;
+  return list->first->data;
 }
 
-Process *queue_peek_back(Queue *list) {
+void *queue_peek_back(Queue *list) {
 
   if (list == NULL || list->last == NULL) {
     return NULL;
   }
 
-  return list->last->process;
+  return list->last->data;
 }
 
-Process *queue_peek_at(Queue *list, int index) {
+void *queue_peek_at(Queue *list, int index) {
   if (list == NULL || index < 0) {
     return NULL;
   }
@@ -312,19 +313,19 @@ Process *queue_peek_at(Queue *list, int index) {
 
   for (QueueItem *it = list->first; it; it = it->next, pos++) {
     if (pos == index) {
-      return it->process;
+      return it->data;
     }
   }
   return NULL;
 }
 
-int queue_remove(Queue *list, Process *p) {
+int queue_remove(Queue *list, void *p) {
   if (list == NULL || p == NULL) {
     return -1;
   }
 
   for (QueueItem *it = list->first; it; it = it->next) {
-    if (it->process != p) {
+    if (it->data != p) {
       continue;
     }
 
@@ -336,7 +337,7 @@ int queue_remove(Queue *list, Process *p) {
   return 1;
 }
 
-Process* queue_remove_at(Queue *list, int index) {
+void* queue_remove_at(Queue *list, int index) {
   if (list == NULL || index < 0) {
     return NULL;
   }
@@ -345,7 +346,7 @@ Process* queue_remove_at(Queue *list, int index) {
 
   for (QueueItem *it = list->first; it; it = it->next) {
     if (pos == index) {
-      Process *p = it->process;
+      void *p = it->data;
       __queue_unlink(list, it);
       __delete_queue_item(it);
       return p;
@@ -363,7 +364,7 @@ int queue_iterate(Queue *queue, Iterator iterator, void *arg) {
   for (QueueItem *it = queue->first, *next = NULL; it; it = next) {
     next = it->next;
 
-    switch(iterator(queue, index++, it->process, arg)) {
+    switch(iterator(queue, index++, it->data, arg)) {
       case QUEUE_ITERATE_FINISH:
         return 0;
       case -1:

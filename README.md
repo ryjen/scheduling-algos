@@ -1,5 +1,5 @@
 # os
 
-Work for things like shells, scheduling algorithms, paging algorithms.
+Work for testing things like shells, scheduling algorithms, paging algorithms.
 
 

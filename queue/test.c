@@ -1,9 +1,10 @@
 #include <stdlib.h>
 
+extern int queue_test();
 
 int main() {
 
-  int failed = 0;
+  int failed = queue_test();
 
   return failed;
 }

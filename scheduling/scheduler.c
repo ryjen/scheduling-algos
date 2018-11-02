@@ -89,8 +89,8 @@ Scheduler *new_scheduler_daemon(Algorithm *algo) {
  */
 void delete_scheduler(Scheduler *value) {
 
-  delete_queue_processes(value->arrivals);
-  delete_queue_processes(value->completed);
+  delete_queue_data(value->arrivals);
+  delete_queue_data(value->completed);
 
   delete_algorithm(value->algorithm);
 
@@ -473,13 +473,14 @@ int scheduler_read_processes(Scheduler *sched) {
 }
 
 // iterates a queue tracking the total turnaround time
-static int __process_turnaround_time_iterator(Queue *list, int index, Process *p, void *arg) {
+static int __process_turnaround_time_iterator(Queue *list, int index, void *data, void *arg) {
 
-  if (list == NULL || arg == NULL || p == NULL || index == -1) {
+  if (list == NULL || arg == NULL || data == NULL || index == -1) {
     return -1;
   }
 
   int *total = (int*) arg;
+  Process *p = (Process *) data;
 
   *total += (process_completion_time(p) - process_arrival_time(p));
 
@@ -487,12 +488,13 @@ static int __process_turnaround_time_iterator(Queue *list, int index, Process *p
 }
 
 // iterates a queue tracking the total wait time
-static int __process_wait_time_iterator(Queue *list, int index, Process *p, void *arg) {
-  if (list == NULL || arg == NULL || p == NULL || index == -1) {
+static int __process_wait_time_iterator(Queue *list, int index, void *data, void *arg) {
+  if (list == NULL || arg == NULL || data == NULL || index == -1) {
     return -1;
   }
 
   int *total = (int *) arg;
+  Process *p = (Process *) data;
 
   *total += ((process_completion_time(p) - process_arrival_time(p)) - process_service_time(p));
 

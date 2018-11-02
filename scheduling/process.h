@@ -40,7 +40,7 @@ int microsleep(int);
  *         process is less than, a positive value if the second
  *         process is less than
  */
-int process_compare_current_service_times(Process *, Process *);
+int process_compare_current_service_times(void *, void *);
 
 /**
  * A comparator for process current arrival times
@@ -50,7 +50,7 @@ int process_compare_current_service_times(Process *, Process *);
  *         process is less than, a positive value if the second
  *         process is less than
  */
-int process_compare_arrival_times(Process *, Process *);
+int process_compare_arrival_times(void *, void *);
 
 /**
  * Runs the process

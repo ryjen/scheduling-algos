@@ -129,14 +129,14 @@ int __distribution_simple(Lottery *l) {
 }
 
 // simply iterates processes to find the total service time
-static int __process_service_time_iterator(Queue *queue, int index, Process *p, void *arg) {
-  if (queue == NULL || index == -1 || p == NULL || arg == NULL) {
+static int __process_service_time_iterator(Queue *queue, int index, void *data, void *arg) {
+  if (queue == NULL || index == -1 || data == NULL || arg == NULL) {
     return -1;
   }
 
   int *total = (int *) arg;
 
-  *total += process_current_service_time(p);
+  *total += process_current_service_time((Process *) data);
 
   return QUEUE_ITERATE_NEXT;
 }

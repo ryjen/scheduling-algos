@@ -1,14 +1,32 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
-#include "types.h"
 #include "queue.h"
-#include "process.h"
+
+typedef struct data {
+  char* id;
+} TestData;
+
+TestData *new_test_data(char *id) {
+  TestData *val = (TestData*) malloc(sizeof(TestData));
+  val->id = id;
+  return val;
+}
+
+char *test_data_id(TestData *data) {
+  return data ? data->id : "null";
+}
+
+int test_data_compare(void *a, void *b) {
+  
+  return strcmp(test_data_id((TestData*)a), test_data_id((TestData*)b));
+}
 
 static int __queue_test_push_back() {
   Queue *q = new_queue();
 
-  Process *p1 = new_process("P1");
+  TestData *p1 = new_test_data("P1");
 
   if (queue_push_back(q, p1) == -1) {
     delete_queue_list(q);
@@ -21,7 +39,7 @@ static int __queue_test_push_back() {
     return 1;
   }
 
-  Process *p2 = new_process("P2");
+  TestData *p2 = new_test_data("P2");
 
   if (queue_push_back(q, p2) == -1) {
     delete_queue_list(q);
@@ -41,14 +59,14 @@ static int __queue_test_push_front() {
 
   Queue *q = new_queue();
 
-  Process *p1 = new_process("P1");
+  TestData *p1 = new_test_data("P1");
 
   if (queue_push_front(q, p1) == -1) {
     delete_queue_list(q);
     return 1;
   }
 
-  Process *p2 = new_process("P2");
+  TestData *p2 = new_test_data("P2");
 
   if (queue_push_front(q, p2) == -1) {
     delete_queue_list(q);
@@ -60,7 +78,7 @@ static int __queue_test_push_front() {
     return 1;
   }
 
-  Process *p3 = queue_peek_front(q);
+  TestData *p3 = queue_peek_front(q);
 
   if (p3 == NULL) {
     puts("no value on front");
@@ -68,7 +86,7 @@ static int __queue_test_push_front() {
   }
 
   if (p3 != p2) {
-    printf("process %s != %s\n", process_name(p2), process_name(p3));
+    printf("TestData %s != %s\n", test_data_id(p2), test_data_id(p3));
     return 1;
   }
 
@@ -80,7 +98,7 @@ static int __queue_test_push_front() {
   }
 
   if (p1 != p3) {
-    printf("process %s != %s\n", process_name(p1), process_name(p3));
+    printf("TestData %s != %s\n", test_data_id(p1), test_data_id(p3));
     return 1;
   }
 
@@ -91,19 +109,19 @@ static int __queue_test_pop_back() {
 
   Queue *q = new_queue();
 
-  Process *p1 = new_process("P1");
+  TestData *p1 = new_test_data("P1");
 
   if (queue_push_back(q, p1) == -1) {
     return 1;
   }
 
-  Process *p2 = new_process("P2");
+  TestData *p2 = new_test_data("P2");
 
   if (queue_push_back(q, p2) == -1) {
     return 1;
   }
 
-  Process *p3 = queue_pop_back(q);
+  TestData *p3 = queue_pop_back(q);
 
   if (p3 == NULL) {
     puts("No value on front");
@@ -111,7 +129,7 @@ static int __queue_test_pop_back() {
   }
 
   if (p3 != p2) {
-    printf("process %s != %s\n", process_name(p2), process_name(p3));
+    printf("TestData %s != %s\n", test_data_id(p2), test_data_id(p3));
     return 1;
   }
 
@@ -128,7 +146,7 @@ static int __queue_test_pop_back() {
   }
 
   if (p3 != p1) {
-    printf("process %s != %s\n", process_name(p1), process_name(p3));
+    printf("TestData %s != %s\n", test_data_id(p1), test_data_id(p3));
     return 1;
   }
 
@@ -144,19 +162,19 @@ static int __queue_test_pop_back() {
 static int __queue_test_pop_front() {
   Queue *q = new_queue();
 
-  Process *p1 = new_process("P1");
+  TestData *p1 = new_test_data("P1");
 
   if (queue_push_back(q, p1) == -1) {
     return 1;
   }
 
-  Process *p2 = new_process("P2");
+  TestData *p2 = new_test_data("P2");
 
   if (queue_push_back(q, p2) == -1) {
     return 1;
   }
 
-  Process *p3 = queue_pop_front(q);
+  TestData *p3 = queue_pop_front(q);
 
   if (p3 == NULL) {
     return 1;
@@ -191,56 +209,50 @@ static int __queue_test_sort() {
 
   Queue *q = new_queue();
 
-  Process *p1 = new_process("P1");
-
-  process_set_arrival_time(p1, 2);
+  TestData *p1 = new_test_data("P3");
 
   if (queue_push_back(q, p1) == -1) {
     return 1;
   }
 
-  Process *p2 = new_process("P2");
-
-  process_set_arrival_time(p2, 6);
+  TestData *p2 = new_test_data("P2");
 
   if (queue_push_back(q, p2) == -1) {
     return 1;
   }
 
-  Process *p3 = new_process("P3");
-
-  process_set_arrival_time(p3, 0);
+  TestData *p3 = new_test_data("P1");
 
   if (queue_push_back(q, p3) == -1) {
     return 1;
   }
 
-  if (queue_sort(q, process_compare_arrival_times) == -1) {
+  if (queue_sort(q, test_data_compare) == -1) {
     return 1;
   }
 
-  Process *p = queue_pop_front(q);
+  TestData *p = queue_pop_front(q);
 
   if (p != p3) {
-    printf("expected %s got %s", process_name(p3), process_name(p));
-    return 1;
-  }
-
-  p = queue_pop_front(q);
-
-  if (p != p1) {
-    printf("expected %s got %s", process_name(p1), process_name(p));
+    printf("expected %s got %s", test_data_id(p3), test_data_id(p));
     return 1;
   }
 
   p = queue_pop_front(q);
 
   if (p != p2) {
-    printf("expected %s got %s", process_name(p2), process_name(p));
+    printf("expected %s got %s", test_data_id(p1), test_data_id(p));
     return 1;
   }
 
-  delete_queue_processes(q);
+  p = queue_pop_front(q);
+
+  if (p != p1) {
+    printf("expected %s got %s", test_data_id(p2), test_data_id(p));
+    return 1;
+  }
+
+  delete_queue_data(q);
 
   return 0;
 }
@@ -249,13 +261,13 @@ int __queue_test_remove() {
 
   Queue *queue = new_queue();
 
-  Process *p1 = new_process();
+  TestData *p1 = new_test_data("P1");
 
   if (queue_push_back(queue, p1)) {
     return 1;
   }
 
-  Process *p2 = new_process();
+  TestData *p2 = new_test_data("P2");
 
   if (queue_push_back(queue, p2)) {
     return 1;
@@ -266,14 +278,14 @@ int __queue_test_remove() {
   }
 
   if (queue_remove(queue, p1)) {
-    printf("unable to remove process");
+    printf("unable to remove TestData");
     return 1;
   }
 
-  Process *p = queue_pop_front(queue);
+  TestData *p = queue_pop_front(queue);
 
   if (p != p2) {
-    printf("expected %s got %s\n", process_name(p2), process_name(p));
+    printf("expected %s got %s\n", test_data_id(p2), test_data_id(p));
     return 1;
   }
 

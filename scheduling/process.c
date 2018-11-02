@@ -116,7 +116,7 @@ int process_set_completion_time(Process *p, int value) {
   return 0;
 }
 
-int process_compare_current_service_times(Process *a, Process *b) {
+int process_compare_current_service_times(void *a, void *b) {
   if (a == NULL) {
     return b ? -1 : 0;
   }
@@ -124,10 +124,10 @@ int process_compare_current_service_times(Process *a, Process *b) {
     return a ? 1 : 0;
   }
 
-  return process_current_service_time(a) - process_current_service_time(b);
+  return process_current_service_time((Process *) a) - process_current_service_time((Process *) b);
 }
 
-int process_compare_arrival_times(Process *a, Process *b) {
+int process_compare_arrival_times(void *a, void *b) {
   if (a == NULL) {
     return b ? -1 : 0;
   }
@@ -135,7 +135,10 @@ int process_compare_arrival_times(Process *a, Process *b) {
     return a ? -1 : 0;
   }
 
-  return a->arrival - b->arrival;
+  Process *p1 = (Process *) a;
+  Process *p2 = (Process *) b;
+
+  return p1->arrival - p2->arrival;
 }
 
 int microsleep(int milliseconds) {
