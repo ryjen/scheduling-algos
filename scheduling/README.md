@@ -71,5 +71,10 @@ Meaning process A will get 75 tickets and process B will get 25 tickets.
 
 ```make test```
 
-```./generate_processes | ./fcfs```
+```./generate_processes | ./fcfs | ./fcfs.test```
+
+```./generate_processes | ./lottery 42 | ./lottery.test```
+
+etc.
+
 
