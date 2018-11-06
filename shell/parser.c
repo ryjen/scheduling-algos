@@ -166,51 +166,113 @@ int parser_read(Parser *parser) {
     return -1;
   }
 
+  if (parser_map_commands(parser)) {
+    puts("Error in input");
+    return -1;
+  }
+  return 0;
+}
+
+int parser_finish_word(Parser *parser, int n, int redir_in, int redir_out, char *start, char *end) {
+
+  if (parser == NULL) {
+    return -1;
+  }
+
+  const size_t len = end - start;
+  char word[len + 1] = {0};
+
+  strncpy(word, len, start);
+
+  if (redir_out) {
+      command_set_file_output(value, word, redir_out == PARSER_APPEND_OUTPUT);
+      return 0;
+  }
+
+  if (redir_in) {
+    command_set_file_input(value, word, redir_in == PARSER_APPEND_INPUT);
+    return 0;
+  }
+
+  command_set_arg(value, word);
+  return 0;
+}
+
+int parser_map_commands(Parser *parser) {
+
+  char *start = NULL;
+  int redir_in = 0;
+  int redir_out = 0;
+  int n = 0;
+
+  if (parser == NULL) {
+    return -1;
+  }
+
   // create a new command list for the parser
   parser->commands = value = command_new();
 
-  // loop through arguments in the input....
-  for (n = 0, arg = strtok(parser->input, " "); 
-      arg && n < command_args_size(); 
-      arg = strtok(NULL, " ")) {
+  for (char *it = parser->input; it; ++it) {
+    switch(*it) {
+      case '\'':
+      case '"':
+        if (start == NULL) {
+          // start new word
+          start = it + 1;
+          continue;
+        }
 
-    // check for symbols...
-    switch(arg[0]) {
-      case '<':
-        if (parser_strip_symbol(&arg) == -1) {
-          puts("No input redirect file");
-          return -1;
-        }
-        // redirect input file
-        command_set_file_input(value, arg);
-        // next arg
-        continue;
+        if (start == it) {
+          // add word to commands
+          parser_finish_word(value, n++, redir_in, redir_out, start, it);
+          continue;
+        } 
+        break;
       case '>':
-        if (parser_strip_symbol(&arg) == -1) {
-          puts("No output redirect file");
-          return -1;
+        if (start == NULL) {
+          redir_out = (redir_out == PARSER_REDIRECT_OUTPUT) ? 
+            PARSER_APPEND_OUTPUT : PARSER_REDIRECT_OUTPUT;
         }
-        // redirect output file
-        command_set_file_output(value, arg);
-        // next arg
-        continue;
+        break;
+
+      case '<':
+        // redirect or append input
+        if (start == NULL) {
+          redir_in = (redir_in & PARSER_REDIRECT_INPUT) ?
+            PARSER_APPEND_INPUT : PARSER_REDIRECT_INPUT;
+        }
+        break;
+
       case '|':
-        // finalize current command
+        // pipe output
+        // finalize current command arg list
         command_set_arg(value, n, NULL);
         n = 0;
         // create new command in list 
         value = command_next(value);
-        // strip arg from current one if needed
-        parser_strip_symbol(&arg);
-        // fall through
+        break;
+
+      default:
+        if (isspace(*it)) {
+          if (start == NULL) {
+            start = it + 1;
+            continue;
+          }
+          
+          if (isspace(start)) {
+            // add word to commands
+            parser_finish_word(value, n++, redir_in, redir_out, start, it);
+
+            // skip remaining spaces
+            while(isspace(*it)) {
+              ++it;
+            }
+            continue;
+          }
+        }
         break;
     }
-    // assign current arg
-    command_set_arg(value, n++, arg);
   }
-
-  // finalize current arg
-  command_set_arg(value, n, NULL);
 
   return 0;
 }
