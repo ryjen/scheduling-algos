@@ -18,6 +18,8 @@ struct parser {
   int in;
   // the saved stdout file descriptor
   int out;
+  // the configuration
+  Config *config;
 };
 
 // allocates a new parser into memory
@@ -30,6 +32,7 @@ Parser *parser_new() {
   value->input = NULL;
   value->in = -1;
   value->out = -1;
+  value->config = NULL;
   return value;
 }
 
@@ -48,12 +51,26 @@ void parser_clear(Parser *parser) {
   if (parser->out != -1) {
     close(parser->out);
   }
+  parser->commands = NULL;
+  parser->input = NULL;
+  parser->in = -1;
+  parser->out = -1;
+  parser->config = NULL;
+
 }
 
 void parser_delete(Parser *parser) {
   parser_clear(parser);
 
   free(parser);
+}
+
+int parser_set_config(Parser *parser, Config *config) {
+  if (parser == NULL) {
+    return -1;
+  }
+  parser->config = config;
+  return 0;
 }
 
 // copies standard in/out to parser
@@ -168,6 +185,8 @@ int parser_read(Parser *parser) {
 
   // create a new command list for the parser
   parser->commands = value = command_new();
+  
+  command_set_config(value, parser->config);
 
   // loop through arguments in the input....
   for (n = 0, arg = strtok(parser->input, " "); 

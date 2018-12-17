@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -5,6 +6,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <sched.h>
+#include <errno.h>
 
 #include "command.h"
 #include "io.h"
@@ -31,7 +34,33 @@ struct command {
   struct fileio in;
   // the output (stdout, pipe or file)
   struct fileio out;
+  // the configuration for execution
+  Config *config;
 };
+
+
+static int __command_secure(Config *config) {
+
+  if (unshare(CLONE_FILES|CLONE_FS|CLONE_NEWCGROUP|CLONE_NEWIPC|CLONE_NEWNET|CLONE_NEWNS|
+        CLONE_NEWPID|CLONE_NEWUTS|CLONE_SYSVSEM) == 0) {
+    return 0;
+  }
+
+  if (errno == EPERM) {
+
+    if (config_get_shared(config) == 1) {
+      return 0;
+    }
+
+    // TODO: gain permission
+    puts("Run with the --shared flag to opt out of the isolation chamber");
+    return -1;
+  } 
+
+  perror("unshare");
+  return -1;
+}
+
 
 int command_args_size() {
   return MAXARGS-1;
@@ -49,11 +78,14 @@ Command *command_new() {
   value->out.name = NULL;
   value->out.descr = -1;
   value->next = NULL;
+  value->config = NULL;
   return value;
 }
 
 Command *command_next(Command *value) {
   value->next = command_new();
+  // share configuration
+  value->next->config = value->config;
   return value->next;
 }
 
@@ -75,6 +107,14 @@ void command_delete_list(Command *cmd) {
     command_delete(cmd);
     cmd = next;
   }
+}
+
+int command_set_config(Command *cmd, Config *config) {
+  if (cmd == NULL) {
+    return -1;
+  }
+  cmd->config = config;
+  return 0;
 }
 
 int command_set_file_input(Command *cmd, const char *file) {
@@ -104,6 +144,10 @@ int command_set_arg(Command *cmd, int index, char *arg) {
 
 // executes a command honoring redirects
 static int command_execute(Command *cmd) {
+
+  if (__command_secure(cmd->config) == -1) {
+    return -1;
+  }
 
   // redirect stdin as needed
   if (cmd->in.name) {

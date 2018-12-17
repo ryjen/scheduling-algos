@@ -9,7 +9,7 @@ TEST = test
 
 ODIR = obj
 
-_PROG_OBJS = command.o parser.o main.o io.o
+_PROG_OBJS = command.o config.o parser.o main.o io.o
 PROG_OBJS = $(patsubst %,$(ODIR)/%,$(_PROG_OBJS))
 
 _TEST_OBJS = 
