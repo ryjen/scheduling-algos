@@ -111,9 +111,9 @@ function test_arrival() {
 
 STATUS=0
 
-echo "Starting test..."
+echo "Starting fcfs test..."
 
-while read LINE; do
+./fcfs | while read LINE; do
 
   IN=($LINE)
 

@@ -37,9 +37,11 @@ struct scheduler {
   // flags for runtime
   int flags;
 
-  // thread locking
-  pthread_cond_t can_produce;
-  pthread_cond_t can_consume;
+  // a signal the producer has a new process
+  pthread_cond_t new_process;
+  // a signal the consumer has a scheduled process
+  pthread_cond_t scheduled_process;
+  // a lock for all process handling
   pthread_mutex_t lock;
 };
 
@@ -68,8 +70,8 @@ Scheduler *new_scheduler(Algorithm *algo) {
 
   pthread_mutex_init(&value->lock, NULL);
 
-  pthread_cond_init(&value->can_produce, NULL);
-  pthread_cond_init(&value->can_consume, NULL);
+  pthread_cond_init(&value->new_process, NULL);
+  pthread_cond_init(&value->scheduled_process, NULL);
 
   return value;
 }
@@ -96,8 +98,8 @@ void delete_scheduler(Scheduler *value) {
 
   pthread_mutex_destroy(&value->lock);
 
-  pthread_cond_destroy(&value->can_consume);
-  pthread_cond_destroy(&value->can_produce);
+  pthread_cond_destroy(&value->scheduled_process);
+  pthread_cond_destroy(&value->new_process);
 
   free(value);
 }
@@ -143,12 +145,12 @@ static int __scheduler_has_new_arrival(Scheduler *sched) {
  * @param sched the scheduler instance
  * @return 0 on success, -1 on error
  */
-static int __scheduler_wait_for_new_arrival(Scheduler *sched) {
+static int __scheduler_wait_for_new_process(Scheduler *sched) {
   // while there is no new arrival...
   while(!__scheduler_has_new_arrival(sched)) {
 
-    // wait until there is a clock tick
-    if (pthread_cond_wait(&sched->can_produce, &sched->lock)) {
+    // wait for a new item on the queue
+    if (pthread_cond_wait(&sched->new_process, &sched->lock)) {
       return -1;
     }
   }
@@ -165,7 +167,7 @@ static void *__scheduler_produce(void *arg) {
   Scheduler *sched = (Scheduler *) arg;
   int err = 0;
 
-  // while the scheduler still has arrivals...
+  // while the scheduler is active...
   while(sched->status == SCHEDULER_ALIVE) {
 
     // lock the scheduler
@@ -176,9 +178,9 @@ static void *__scheduler_produce(void *arg) {
     }
 
     // wait for new arrivals
-    err = __scheduler_wait_for_new_arrival(sched);
+    err = __scheduler_wait_for_new_process(sched);
 
-    if (__scheduler_error(sched, err, "scheduler_wait_for_new_arrival")) {
+    if (__scheduler_error(sched, err, "scheduler_wait_for_new_process")) {
       break;
     }
 
@@ -213,14 +215,12 @@ static void *__scheduler_produce(void *arg) {
     }
 
     // signal that there is a new arrival to service
-    err = pthread_cond_signal(&sched->can_consume);
+    err = pthread_cond_signal(&sched->scheduled_process);
 
     if (__scheduler_error(sched, err, "pthread_cond_signal")) {
       break;
     }
   }
-
-  // destructor will handle additional cleanup
 
   return NULL;
 }
@@ -230,10 +230,10 @@ static void *__scheduler_produce(void *arg) {
  * @param sched the scheduler instance
  * @return 0 on success, -1 on error
  */
-static int __scheduler_wait_for_new_process(Scheduler *sched) {
+static int __scheduler_wait_for_scheduled_process(Scheduler *sched) {
   // test the algorithm doesn't have a process ready
   while (!algorithm_process_ready(sched->algorithm)) {
-    if (pthread_cond_wait(&sched->can_consume, &sched->lock)) {
+    if (pthread_cond_wait(&sched->scheduled_process, &sched->lock)) {
       return -1;
     }
   }
@@ -263,7 +263,7 @@ static void *__scheduler_consume(void *arg) {
     }
 
     // if the queue is empty, wait for a new process
-    err = __scheduler_wait_for_new_process(sched);
+    err = __scheduler_wait_for_scheduled_process(sched);
 
     if (__scheduler_error(sched, err, "scheduler_wait_for_queue")) {
       break;
@@ -322,17 +322,15 @@ static void *__scheduler_consume(void *arg) {
     }
 
     // finally check the producer for new items
-    err = pthread_cond_signal(&sched->can_produce);
+    err = pthread_cond_signal(&sched->new_process);
 
     if (__scheduler_error(sched, err, "pthread_mutex_unlock")) {
       break;
     }
 
-    // breathing room
+    // breathing room, or a system tick
     microsleep(100);
   }
-
-  // destructor will handle additional cleanup
 
   return NULL;
 }
@@ -406,7 +404,7 @@ int scheduler_add_process(Scheduler *sched, Process *p) {
     return -1;
   }
 
-  if (pthread_cond_signal(&sched->can_produce)) {
+  if (pthread_cond_signal(&sched->new_process)) {
     return -1;
   }
 

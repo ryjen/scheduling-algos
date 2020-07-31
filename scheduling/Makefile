@@ -5,15 +5,13 @@ DEPS = scheduler.h process.h types.h algorithm.h
 LIBS = -lpthread -lqueue
 
 PROGS = fcfs str spn rr lottery mlfq
-TEST = test
+TESTS = $(patsubst %, %.test, $(PROGS))
+TEST_GENERATOR = generate-processes
 
 ODIR = obj
 
 _PROG_OBJS = scheduler.o process.o algorithm.o
 PROG_OBJS = $(patsubst %,$(ODIR)/%,$(_PROG_OBJS))
-
-_TEST_OBJS = test.o $(_PROG_OBJS)
-TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
 all: $(ODIR) $(PROGS) $(TEST)
 
@@ -47,14 +45,14 @@ mlfq: $(ODIR)/mlfq.o $(PROG_OBJS)
 	@echo "Linking $@"
 	@$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-$(TEST): $(TEST_OBJS)
-	@echo "Linking $@"
-	@$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
-	@[ ! -x $@ ] || ./$@
+test: $(PROGS) $(TESTS)
 
 $(ODIR)/%.o: %.c $(DEPS)
 	@echo "Compiling $@"
 	@$(CC) -c -o $@ $< $(CFLAGS)
+
+%.test: 
+	@./$(TEST_GENERATOR) | ./$*.verify
 
 .PHONY: clean
 

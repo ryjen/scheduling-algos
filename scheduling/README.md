@@ -6,11 +6,11 @@
 
 #### queue
 
-Queue's represent a doubly linked list of processes.  They are used in a scheduler for:
+Queue's represent a doubly linked list of processes.  Used in:
 
-* new process arrivals
-* a processing queue for algorithms to work with
-* a list of completed processes for post processing
+* scheduler new process arrivals
+* an algorithm processing queue
+* scheduler completed processes for post processing
 
 #### processes
 
@@ -18,9 +18,9 @@ Represents a process in the scheduler.  The key information is:
 
 * arrival time
 * service time
-* completion time.  
+* completion time
 
-They also maintains a state of clock ticks.
+They also maintains a state of their current clock ticks.
 
 #### algorithms
 
@@ -41,14 +41,39 @@ A producer/consumer design pattern that:
 
 1. accepts new arrivals on arrival time
 2. sends processes to the algorithm queues
-3. performs completion statistics
+3. consumes scheduled processes
+4. performs completion statistics
 
 The scheduler maintains a clock tick for time sliced processing.
 
 
+#### first come, first serve (ftfs)
+
+self explanatory
+
+#### shortest process next (spn)
+
+See [wiki](https://en.wikipedia.org/wiki/Shortest_job_next)
+
+#### shortest time remaining (str)
+
+See [wiki](https://en.wikipedia.org/wiki/Shortest_remaining_time)
+
+#### round robin (rr)
+
+Accepts a quantum integer as input with a default of 3.
+
+self explanatory.  see [wiki](https://en.wikipedia.org/wiki/Round-robin_scheduling)
+
+#### multi level feedback queue
+
+Accepts a quantum and the number of queues as input (defaults of 3).
+
+See [wiki](https://en.wikipedia.org/wiki/Multilevel_feedback_queue)
+  
 #### lottery
 
-The lottery algorithm uses process tickets and randomization to schedule the next process.
+The [lottery algorithm](https://en.wikipedia.org/wiki/Lottery_scheduling) uses process tickets and randomization to schedule the next process.
 
 The way processes get tickets is left to the implementation.  I've chosen to have a global maximum tickets of 100.
 A random number betweeen 0 and 99 generates the winning ticket.  
@@ -71,9 +96,9 @@ Meaning process A will get 75 tickets and process B will get 25 tickets.
 
 ```make test```
 
-```./generate_processes | ./fcfs | ./fcfs.test```
+```./generate-processes | ./fcfs.verify```
 
-```./generate_processes | ./lottery 42 | ./lottery.test```
+```./generate-processes | ./lottery.verify```
 
 etc.
 

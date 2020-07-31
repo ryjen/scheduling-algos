@@ -111,7 +111,7 @@ function test_arrival() {
 
 STATUS=0
 
-echo "Starting test (will only work with quantum '3')..."
+echo "Starting rr test (will only work with quantum '3')..."
 
 QUANTUM=3
 
@@ -124,7 +124,7 @@ if [[ "$QUANTUM" != 3 ]]; then
   exit 1
 fi
 
-while read LINE; do
+./rr | while read LINE; do
 
   IN=($LINE)
 
