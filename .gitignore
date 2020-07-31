@@ -1,10 +1,14 @@
 obj
 *.o
-rr
-spn
-str
-test
-fcfs
+
+scheduling/rr
+scheduling/spn
+scheduling/str
+scheduling/lottery
+scheduling/mlfq
+scheduling/fcfs
+queue/test
+shell/shell
 
 # Prerequisites
 *.d
@@ -58,8 +62,4 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-
-lottery
-shell
-mlfq
 
