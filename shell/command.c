@@ -38,9 +38,8 @@ struct command {
   Config *config;
 };
 
-
+#if 0
 static int __command_secure(Config *config) {
-
   if (unshare(CLONE_FILES|CLONE_FS|CLONE_NEWCGROUP|CLONE_NEWIPC|CLONE_NEWNET|CLONE_NEWNS|
         CLONE_NEWPID|CLONE_NEWUTS|CLONE_SYSVSEM) == 0) {
     return 0;
@@ -60,6 +59,7 @@ static int __command_secure(Config *config) {
   perror("unshare");
   return -1;
 }
+#endif
 
 
 int command_args_size() {
@@ -144,10 +144,6 @@ int command_set_arg(Command *cmd, int index, char *arg) {
 
 // executes a command honoring redirects
 static int command_execute(Command *cmd) {
-
-  if (__command_secure(cmd->config) == -1) {
-    return -1;
-  }
 
   // redirect stdin as needed
   if (cmd->in.name) {
