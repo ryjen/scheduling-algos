@@ -16,6 +16,8 @@ BIN_OBJS = $(patsubst %,$(ODIR)/%,$(_BIN_OBJS))
 _TEST_OBJS = test.o queue_test.o $(_BIN_OBJS)
 TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
+.PHONY: clean test help 
+
 all: $(ODIR) $(BINARY) $(TEST)
 
 help:
@@ -36,8 +38,6 @@ $(TEST): $(TEST_OBJS)
 $(ODIR)/%.o: %.c $(DEPS)
 	@echo "Compiling $@"
 	@$(CC) -c -o $@ $< $(CFLAGS)
-
-.PHONY: clean
 
 clean:
 	@rm -rf $(ODIR)
