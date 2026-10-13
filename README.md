@@ -1,5 +1,7 @@
 # Scheduling algorithms
 
+> **Historical example (unmaintained).** Historical operating-systems scheduling exercise and simulation; not a production scheduler or current platform runtime.
+
 ## design
 
 ### model
